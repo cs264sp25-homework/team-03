@@ -1,0 +1,20 @@
+{
+  "name": "TabAssist",
+  "manifest_version": 3,
+  "version": "1.0",
+  "description": "Creates an intelligent assistant that can access and synthesize information across your browser tabs.",
+  "permissions": ["tabs"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_title": "Get Tab Titles"
+  }
+}
