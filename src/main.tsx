@@ -3,11 +3,14 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "@/App.tsx";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Providers } from "@/components/providers";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <TooltipProvider>
-      <App />
-    </TooltipProvider>
+    <Providers>
+      <TooltipProvider>
+        <App />
+      </TooltipProvider>
+    </Providers>
   </StrictMode>,
 );
