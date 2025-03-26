@@ -1,0 +1,36 @@
+body {
+    width: 300px;
+    padding: 10px;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    text-align: center;
+}
+
+h1 {
+    color: #4285f4;
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+button {
+    background-color: #4285f4;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 10px 0;
+}
+
+button:hover {
+    background-color: #357abd;
+}
+
+#tabList {
+    margin-top: 10px;
+    text-align: left;
+    max-height: 300px;
+    overflow-y: auto;
+} 
