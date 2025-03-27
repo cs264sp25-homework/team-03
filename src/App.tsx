@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { StartPage } from "@/pages/start-page";
 import { useUser } from "@/hooks/useUser";
+import { Button } from "@/components/ui/button";
+import { TextPreviewModal } from "@/components/text-preview-modal";
+import { FileText } from "lucide-react";
 
 declare global {
   interface Window {
@@ -15,6 +18,10 @@ function App() {
   });
   const [tabs, setTabs] = useState<chrome.tabs.Tab[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTab, setSelectedTab] = useState<chrome.tabs.Tab | null>(null);
+  const [extractedText, setExtractedText] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string>();
   
   useUser();
 
@@ -35,57 +42,113 @@ function App() {
     tab.url?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleExtractText = async (tab: chrome.tabs.Tab) => {
+    if (!tab.url) return;
+    
+    setSelectedTab(tab);
+    setIsLoading(true);
+    setError(undefined);
+    setExtractedText("");
+
+    try {
+      const response = await fetch('http://localhost:5000/extract', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: tab.url }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to extract text');
+      }
+
+      const data = await response.json();
+      setExtractedText(data.text);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to extract text');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!hasStarted) {
     return <StartPage onStart={() => setHasStarted(true)} />;
   }
 
   return (
     <MainLayout>
-      <div className="space-y-4 w-full">
-        <div className="sticky top-0 bg-background pt-2 pb-4 border-b">
-          <input
-            type="text"
-            placeholder="Search tabs..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 rounded-lg border border-gray-600 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background text-foreground placeholder-gray-500"
-          />
+      <div className="flex flex-col h-full w-full">
+        <div className="sticky top-0 z-10 bg-background border-b">
+          <div className="px-4 py-3">
+            <input
+              type="text"
+              placeholder="Search tabs..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 rounded-lg border border-gray-600 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background text-foreground placeholder-gray-500"
+            />
+          </div>
         </div>
         
-        <div className="space-y-4">
-          <div className="grid gap-3">
+        <div className="flex-1 overflow-y-auto px-4 py-3">
+          <div className="space-y-3">
             {filteredTabs.map((tab) => (
               <div
                 key={tab.id}
-                className="flex items-start gap-3 p-3 rounded-lg border border-gray-600 dark:border-gray-700 bg-background hover:bg-muted transition-colors cursor-pointer"
-                onClick={() => chrome.tabs.update(tab.id!, { active: true })}
+                className="flex items-start gap-3 p-3 rounded-lg border border-gray-600 dark:border-gray-700 bg-background hover:bg-muted transition-colors"
               >
-                {tab.favIconUrl && (
-                  <img
-                    src={tab.favIconUrl}
-                    alt=""
-                    className="w-4 h-4 mt-1 flex-shrink-0"
-                  />
-                )}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-sm text-foreground truncate">
-                    {tab.title}
-                  </h3>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {tab.url}
-                  </p>
+                <div 
+                  className="flex-1 min-w-0 cursor-pointer"
+                  onClick={() => chrome.tabs.update(tab.id!, { active: true })}
+                >
+                  <div className="flex items-start gap-3">
+                    {tab.favIconUrl && (
+                      <img
+                        src={tab.favIconUrl}
+                        alt=""
+                        className="w-4 h-4 mt-1 flex-shrink-0"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-sm text-foreground truncate">
+                        {tab.title}
+                      </h3>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {tab.url}
+                      </p>
+                    </div>
+                  </div>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-shrink-0"
+                  onClick={() => handleExtractText(tab)}
+                >
+                  <FileText className="h-4 w-4 mr-1" />
+                  Extract Text
+                </Button>
               </div>
             ))}
+            
+            {filteredTabs.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                {searchQuery ? "No matching tabs found" : "No open tabs"}
+              </div>
+            )}
           </div>
-          
-          {filteredTabs.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              {searchQuery ? "No matching tabs found" : "No open tabs"}
-            </div>
-          )}
         </div>
       </div>
+
+      <TextPreviewModal
+        isOpen={!!selectedTab}
+        onClose={() => setSelectedTab(null)}
+        text={extractedText}
+        url={selectedTab?.url || ""}
+        isLoading={isLoading}
+        error={error}
+      />
     </MainLayout>
   );
 }
