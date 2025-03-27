@@ -11,11 +11,11 @@ interface MainLayoutProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function MainLayout({ children, className, ...props }: MainLayoutProps) {
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen w-full">
       <Sidebar>
         <SidebarNavItem
           icon={<Bookmark />}
-          label="All Bookmarks"
+          label="All Tabs"
           isActive
         />
         <SidebarNavItem
@@ -32,10 +32,10 @@ export function MainLayout({ children, className, ...props }: MainLayoutProps) {
           label="Settings"
         />
       </Sidebar>
-      <div className="flex flex-col flex-1">
+      <div className="flex flex-col flex-1 min-w-0">
         <TopBar />
         <main
-          className={cn("flex-1 overflow-y-auto px-4 py-3", className)}
+          className={cn("flex-1 overflow-y-auto p-4", className)}
           {...props}
         >
           {children}

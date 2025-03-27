@@ -20,7 +20,7 @@ export function Sidebar({
     <aside
       className={cn(
         "group/sidebar relative flex h-screen flex-col overflow-y-auto border-r bg-background px-3 pb-3 pt-2 transition-all duration-300",
-        isCollapsed ? "w-[50px]" : "w-[240px]",
+        isCollapsed ? "w-[50px]" : "w-[180px]",
         className
       )}
       {...props}
@@ -32,7 +32,7 @@ export function Sidebar({
             isCollapsed && "opacity-0"
           )}
         >
-          {!isCollapsed && <span className="text-lg font-semibold">Bookmarks</span>}
+          {!isCollapsed && <span className="text-lg font-semibold">Tabs</span>}
         </div>
         <Button
           variant="ghost"

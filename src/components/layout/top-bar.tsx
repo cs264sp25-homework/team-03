@@ -13,7 +13,7 @@ export function TopBar({ className, ...props }: TopBarProps) {
       )}
       {...props}
     >
-      <div className="font-semibold">Bookmarks</div>
+      <div className="font-semibold text-foreground">Tabs</div>
       <div className="flex items-center gap-2">
         <ThemeToggle />
       </div>
