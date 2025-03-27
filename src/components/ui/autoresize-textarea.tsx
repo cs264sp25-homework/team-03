@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import * as React from "react";
 
 import { useImperativeHandle } from "react";
-import { useAutosizeTextArea } from "@/hooks/use-autosize-textarea";
+//import { useAutosizeTextArea } from "@/hooks/use-autosize-textarea";
 
 export type AutosizeTextAreaRef = {
   textArea: HTMLTextAreaElement;
@@ -31,14 +31,14 @@ export const AutosizeTextarea = React.forwardRef<
     ref: React.Ref<AutosizeTextAreaRef>,
   ) => {
     const textAreaRef = React.useRef<HTMLTextAreaElement | null>(null);
-    const [triggerAutoSize, setTriggerAutoSize] = React.useState("");
+    //const [triggerAutoSize, setTriggerAutoSize] = React.useState("");
 
-    useAutosizeTextArea({
+    /*useAutosizeTextArea({
       textAreaRef,
       triggerAutoSize: triggerAutoSize,
       maxHeight,
       minHeight,
-    });
+    });*/
 
     useImperativeHandle(ref, () => ({
       textArea: textAreaRef.current as HTMLTextAreaElement,
@@ -47,9 +47,9 @@ export const AutosizeTextarea = React.forwardRef<
       minHeight,
     }));
 
-    React.useEffect(() => {
+   /* React.useEffect(() => {
       setTriggerAutoSize(value as string);
-    }, [props?.defaultValue, value]);
+    }, [props?.defaultValue, value]);*/
 
     return (
       <textarea
@@ -61,7 +61,7 @@ export const AutosizeTextarea = React.forwardRef<
           className,
         )}
         onChange={(e) => {
-          setTriggerAutoSize(e.target.value);
+          //setTriggerAutoSize(e.target.value);
           onChange?.(e);
         }}
       />
