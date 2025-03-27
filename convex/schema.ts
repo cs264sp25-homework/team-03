@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { vSessionId } from "convex-helpers/server/sessions";
 
 /*export const chunkSchema = {
   pageId: v.id("pages"),
@@ -22,38 +23,36 @@ import { v } from "convex/values";
   embedding: v.array(v.float64()),
 };*/
 
+//update: the schema is a user can have many tabs, a user can have one and only one chat based on those tabs
 export default defineSchema({
-
-  collections: defineTable({
-    userId: v.id("users"),  // Each collection belongs to a user
-    name: v.string(),      // Collection name (e.g., "AI Research Papers", "Shopping Wishlist")
-    description: v.optional(v.string()), // Optional collection description
-    createdAt: v.number(), // Timestamp
-  }).index("by_user_id", ["userId"]),
+  users: defineTable({
+    // Note: make sure not to leak this to clients. See this post for more info:
+    // https://stack.convex.dev/track-sessions-without-cookies
+    sessionId: vSessionId,
+  }).index("by_sessionId", ["sessionId"]),
 
   tabs: defineTable({
-    collectionId: v.id("collections"),
+    userId: v.id("users"),  // Each tab belongs to a user
     url: v.string(),
     name: v.optional(v.string()), 
     content: v.optional(v.string()),
     error: v.optional(v.string()),
   })
-  .index("by_collection_id", ["collectionId"]),
+  .index("by_user_id", ["userId"]),
   
   chats: defineTable({
-    collectionId: v.id("collections"), // Chat belongs to a collection
+    userId: v.id("users"),  // Each chat belongs to a user
     title: v.string(),
     description: v.optional(v.string()),
     messageCount: v.number(),
     fileCount: v.number(),
-  }).index("by_collection_id", ["collectionId"]),
+  }) .index("by_user_id", ["userId"]),
 
   messages: defineTable({
     chatId: v.id("chats"),
     content: v.string(),
     role: v.union(v.literal("user"), v.literal("assistant")),
   }).index("by_chat_id", ["chatId"]),
-
 
   /*chunks: defineTable(chunkSchema).vectorIndex("by_embedding", {
     vectorField: "embedding",

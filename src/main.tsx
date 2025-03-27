@@ -28,14 +28,32 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   </React.StrictMode>,
 )*/
 
+
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
+//convex user session wrapper
+import { SessionProvider } from "convex-helpers/react/sessions";
+import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { useLocalStorage } from "usehooks-ts";
+
+// Initialize the Convex client
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <ConvexProvider client={convex}>
+      <SessionProvider 
+        useStorage={useLocalStorage}
+        storageKey="TabAssistSessionId"
+      >
+        <App />
+      </SessionProvider>
+    </ConvexProvider>
   </React.StrictMode>,
 )
+
+
 
