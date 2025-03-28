@@ -33,6 +33,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 //convex user session wrapper
 import { SessionProvider } from "convex-helpers/react/sessions";
@@ -49,7 +50,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         useStorage={useLocalStorage}
         storageKey="TabAssistSessionId"
       >
-        <App />
+        <TooltipProvider>
+          <App />
+        </TooltipProvider>
       </SessionProvider>
     </ConvexProvider>
   </React.StrictMode>,

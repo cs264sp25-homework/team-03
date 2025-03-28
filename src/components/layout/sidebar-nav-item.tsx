@@ -20,12 +20,13 @@ export function SidebarNavItem({
   className,
   ...props
 }: SidebarNavItemProps) {
+
   const content = (
     <Button
       variant={isActive ? "secondary" : "ghost"}
       className={cn(
-        "w-full justify-start",
-        isCollapsed ? "px-2" : "px-3",
+        "w-full",
+        isCollapsed ? "px-2 justify-center" : "px-3 justify-start",
         className
       )}
       {...props}

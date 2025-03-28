@@ -8,10 +8,12 @@ CORS(app)
 
 @app.route('/extract', methods=['POST'])
 def extract_text():
+    print('test')
     try:
         url = request.json.get('url')
         if not url:
             return jsonify({'error': 'URL is required'}), 400
+        print(url)
 
         # Fetch the webpage
         response = requests.get(url)

@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { StartPage } from "@/pages/start-page";
 import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
 import { TextPreviewModal } from "@/components/text-preview-modal";
 import { FileText } from "lucide-react";
-
+import { FLASK_URL } from "@/env";
 declare global {
   interface Window {
     chrome: typeof chrome;
@@ -37,10 +37,10 @@ function App() {
     });
   }, []);
 
-  const filteredTabs = tabs.filter(tab => 
+  const filteredTabs = useMemo(() => tabs.filter(tab => 
     tab.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     tab.url?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ), [tabs, searchQuery]);
 
   const handleExtractText = async (tab: chrome.tabs.Tab) => {
     if (!tab.url) return;
@@ -51,7 +51,8 @@ function App() {
     setExtractedText("");
 
     try {
-      const response = await fetch('http://localhost:5000/extract', {
+      console.log('calling server', `${FLASK_URL}/extract`);
+      const response = await fetch(`${FLASK_URL}/extract`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,25 +79,25 @@ function App() {
 
   return (
     <MainLayout>
-      <div className="flex flex-col h-full w-full">
-        <div className="sticky top-0 z-10 bg-background border-b">
+      <div className="flex flex-col w-full h-full">
+        <div className="sticky top-0 z-10 border-b bg-background">
           <div className="px-4 py-3">
             <input
               type="text"
               placeholder="Search tabs..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-600 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background text-foreground placeholder-gray-500"
+              className="w-full px-4 py-2 placeholder-gray-500 border border-gray-600 rounded-lg dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background text-foreground"
             />
           </div>
         </div>
         
-        <div className="flex-1 overflow-y-auto px-4 py-3">
+        <div className="flex-1 px-4 py-3 overflow-y-auto">
           <div className="space-y-3">
             {filteredTabs.map((tab) => (
               <div
                 key={tab.id}
-                className="flex items-start gap-3 p-3 rounded-lg border border-gray-600 dark:border-gray-700 bg-background hover:bg-muted transition-colors"
+                className="flex items-start gap-3 p-3 transition-colors border border-gray-600 rounded-lg dark:border-gray-700 bg-background hover:bg-muted"
               >
                 <div 
                   className="flex-1 min-w-0 cursor-pointer"
@@ -107,14 +108,14 @@ function App() {
                       <img
                         src={tab.favIconUrl}
                         alt=""
-                        className="w-4 h-4 mt-1 flex-shrink-0"
+                        className="flex-shrink-0 w-4 h-4 mt-1"
                       />
                     )}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-sm text-foreground truncate">
+                      <h3 className="text-sm font-medium truncate text-foreground">
                         {tab.title}
                       </h3>
-                      <p className="text-xs text-muted-foreground truncate">
+                      <p className="text-xs truncate text-muted-foreground">
                         {tab.url}
                       </p>
                     </div>
@@ -126,14 +127,14 @@ function App() {
                   className="flex-shrink-0"
                   onClick={() => handleExtractText(tab)}
                 >
-                  <FileText className="h-4 w-4 mr-1" />
+                  <FileText className="w-4 h-4 mr-1" />
                   Extract Text
                 </Button>
               </div>
             ))}
             
             {filteredTabs.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="py-8 text-center text-muted-foreground">
                 {searchQuery ? "No matching tabs found" : "No open tabs"}
               </div>
             )}

@@ -30,6 +30,7 @@
     "clsx": "^2.1.1",
     "convex": "^1.21.0",
     "convex-helpers": "^0.1.76",
+    "flask": "^0.2.10",
     "katex": "^0.16.21",
     "lucide-react": "^0.471.2",
     "nanoid": "^5.0.9",

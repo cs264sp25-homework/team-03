@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode;
+  children: React.ReactElement<{ isCollapsed?: boolean }>[];
   defaultCollapsed?: boolean;
 }
 
@@ -19,7 +19,7 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "group/sidebar relative flex h-screen flex-col overflow-y-auto border-r bg-background px-3 pb-3 pt-2 transition-all duration-300",
+        "group/sidebar relative flex h-screen flex-col overflow-hidden border-r bg-background px-3 pb-3 pt-2 transition-all duration-300",
         isCollapsed ? "w-[50px]" : "w-[180px]",
         className
       )}
@@ -37,13 +37,13 @@ export function Sidebar({
         <Button
           variant="ghost"
           size="icon"
-          className="h-6 w-6"
+          className="w-6 h-6"
           onClick={() => setIsCollapsed(!isCollapsed)}
         >
           {isCollapsed ? (
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="w-4 h-4" />
           ) : (
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="w-4 h-4" />
           )}
         </Button>
       </div>
@@ -54,7 +54,12 @@ export function Sidebar({
           isCollapsed && "items-center justify-center"
         )}
       >
-        {children}
+        {React.Children.map(children, child => {
+          if (React.isValidElement(child)) {
+            return React.cloneElement(child, { isCollapsed });
+          }
+          return child;
+        })}
       </div>
     </aside>
   );
