@@ -43,9 +43,7 @@ export function TextPreviewModal({
             <div className="text-red-500 p-4 text-center">
               <p className="font-medium mb-2">Failed to extract text</p>
               <p className="text-sm text-muted-foreground">
-                {error === 'Failed to fetch' ? 
-                  'Make sure the Python server is running on port 5000' : 
-                  error}
+                {error}
               </p>
             </div>
           ) : (

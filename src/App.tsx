@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { StartPage } from "@/pages/start-page";
 import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
 import { TextPreviewModal } from "@/components/text-preview-modal";
 import { FileText } from "lucide-react";
-import { FLASK_URL } from "@/env";
 declare global {
   interface Window {
     chrome: typeof chrome;
@@ -29,13 +28,29 @@ function App() {
     localStorage.setItem("hasStarted", hasStarted.toString());
   }, [hasStarted]);
 
-  useEffect(() => {
+  const updateTabs = useCallback(() => {
     chrome.runtime.sendMessage({type: "getTabs"}, (response) => {
-      if (response && response.tabs) {
+      if (response?.tabs) {
         setTabs(response.tabs);
       }
     });
   }, []);
+
+  useEffect(() => {
+    // Initial load
+    updateTabs();
+
+    // Listen for tab changes
+    chrome.tabs.onCreated.addListener(updateTabs);
+    chrome.tabs.onRemoved.addListener(updateTabs);
+    chrome.tabs.onUpdated.addListener(updateTabs);
+
+    return () => {
+      chrome.tabs.onCreated.removeListener(updateTabs);
+      chrome.tabs.onRemoved.removeListener(updateTabs);
+      chrome.tabs.onUpdated.removeListener(updateTabs);
+    };
+  }, [updateTabs]);
 
   const filteredTabs = useMemo(() => tabs.filter(tab => 
     tab.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -43,7 +58,7 @@ function App() {
   ), [tabs, searchQuery]);
 
   const handleExtractText = async (tab: chrome.tabs.Tab) => {
-    if (!tab.url) return;
+    if (!tab.url || !tab.id) return;
     
     setSelectedTab(tab);
     setIsLoading(true);
@@ -51,23 +66,41 @@ function App() {
     setExtractedText("");
 
     try {
-      console.log('calling server', `${FLASK_URL}/extract`);
-      const response = await fetch(`${FLASK_URL}/extract`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url: tab.url }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to extract text');
+      interface ExtractTextResponse {
+        success: boolean;
+        text?: string;
+        error?: string;
+        metadata?: {
+          title: string;
+          excerpt: string;
+          siteName: string;
+        };
       }
 
-      const data = await response.json();
-      setExtractedText(data.text);
+      // Extract text using background script
+      const response = await new Promise<ExtractTextResponse>((resolve) => {
+        chrome.runtime.sendMessage({ 
+          type: 'extractText', 
+          tabId: tab.id 
+        }, resolve);
+      });
+      
+      if (!response?.success) {
+        throw new Error(response?.error || 'Failed to extract text');
+      }
+      
+      if (!response.text) {
+        throw new Error('No text extracted');
+      }
+      
+      setExtractedText(response.text);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to extract text');
+      console.error('Error:', err);
+      setError(
+        err instanceof Error 
+          ? err.message 
+          : 'Failed to extract text. Please try again.'
+      );
     } finally {
       setIsLoading(false);
     }
