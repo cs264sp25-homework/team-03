@@ -13,6 +13,9 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as chats from "../chats.js";
+import type * as guards_auth from "../guards/auth.js";
+import type * as guards_chats_guards from "../guards/chats_guards.js";
 import type * as lib_sessions from "../lib/sessions.js";
 import type * as users from "../users.js";
 
@@ -25,6 +28,9 @@ import type * as users from "../users.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  chats: typeof chats;
+  "guards/auth": typeof guards_auth;
+  "guards/chats_guards": typeof guards_chats_guards;
   "lib/sessions": typeof lib_sessions;
   users: typeof users;
 }>;

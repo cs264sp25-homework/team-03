@@ -45,7 +45,7 @@ export default defineSchema({
     title: v.string(),
     description: v.optional(v.string()),
     messageCount: v.number(),
-    fileCount: v.number(),
+    tabCount: v.number(),
   }) .index("by_user_id", ["userId"]),
 
   messages: defineTable({
