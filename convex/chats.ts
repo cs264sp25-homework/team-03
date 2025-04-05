@@ -1,9 +1,8 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
-import { ownershipGuard } from "./guards/chats_guards";
+import { ownershipGuard } from "./guards/ownership_guards";
 import { authenticationGuard } from "./guards/auth";
 import { mutationWithSession, queryWithSession } from "./lib/sessions";
-
 
 // ctx.user and ctx.sessionId come with mutationWithSession and queryWithSession functions
 

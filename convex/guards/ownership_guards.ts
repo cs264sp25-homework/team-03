@@ -6,11 +6,11 @@ import { Id } from "../_generated/dataModel";
  */
 export const ownershipGuard = (
   userId: Id<"users">,
-  chatUserId: Id<"users">,
+  resourceUserId: Id<"users">,
 ): void => {
-  if (chatUserId !== userId) {
+  if (resourceUserId !== userId) {
     throw new ConvexError({
-      message: "Not authorized to access this chat",
+      message: "Not authorized to access this resource",
       code: 403,
     });
   }
