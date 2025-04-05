@@ -1,8 +1,8 @@
 import { v,ConvexError } from "convex/values";
-import { query, mutation, internalMutation } from "./_generated/server";
+import { mutation, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { authenticationGuard } from "./guards/auth";
-import { mutationWithSession, queryWithSession } from "./lib/sessions";
+import { queryWithSession } from "./lib/sessions";
 
 
 export const getAll = queryWithSession({

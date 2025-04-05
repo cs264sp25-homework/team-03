@@ -2,8 +2,9 @@ import {  v } from "convex/values";
 import { mutationWithSession, queryWithSession } from "./lib/sessions";
 import { authenticationGuard } from "./guards/auth";
 import { ownershipGuard } from "./guards/ownership_guards";
-import { internal } from "./_generated/api";
-import { internalQuery, internalMutation, internalAction } from "./_generated/server";
+//import { internal } from "./_generated/api";
+import { internalQuery } from "./_generated/server";
+//import { internalMutation,internalAction } from "./_generated/server";
 
 
 

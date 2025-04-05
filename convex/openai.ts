@@ -1,10 +1,12 @@
 import { createOpenAI, openai } from "@ai-sdk/openai";
-import { embedMany, streamText, tool } from "ai";
+import { embedMany, streamText } from "ai";
+//import { tool } from "ai";
 import { internalAction } from "./_generated/server";
-import { api, internal } from "./_generated/api";
+import {  internal } from "./_generated/api";
+//import { api } from "./_generated/api";
 import { v } from "convex/values";
-import { z } from "zod";
-import { Id } from "./_generated/dataModel";
+
+//import { Id } from "./_generated/dataModel";
 
 export interface TextEmbedding {
   text: string;
