@@ -64,32 +64,24 @@ const MessageList: React.FC<MessageListProps> = ({ chatId }) => {
       const firstMessage = messages[0];
       const lastMessage = messages[messages.length - 1];
 
+      // Always scroll to bottom for new messages unless user is actively scrolling up
       if (lastMessage._id !== lastMessageId.current) {
-        // if the last message is new, scroll to the bottom
         lastMessageId.current = lastMessage._id;
-        scrollToMessage(lastMessageId.current);
+        if (!isUserScrolling.current || scrollDirection === "down") {
+          scrollToMessage(lastMessageId.current);
+        }
       } else if (firstMessage._id !== firstMessageId.current) {
         // if the first message is new, user loaded earlier messages
-        // scroll so what used to be the first message is still visible
-        const oldFirstMessageId = firstMessageId.current;
         firstMessageId.current = firstMessage._id;
-        scrollToMessage(oldFirstMessageId, "center");
-      } else {
-        // if the first and last message are as before, the last message is being
-        // updated by the AI, so we should scroll to the bottom
-        // unless the user is scrolling up or down
-        if (!isUserScrolling.current && scrollDirection !== "up") {
-          scrollToMessage(lastMessageId.current);
+        if (isUserScrolling.current && scrollDirection === "up") {
+          scrollToMessage(firstMessageId.current, "center");
         }
       }
     },
-    // Do not add isUserScrolling or scrollDirection to the dependencies!
     [messages, scrollToMessage],
   );
 
-  // TODO: should we debounce this?
   const handleOnScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    // Clear existing timeout
     if (scrollTimeout.current) {
       clearTimeout(scrollTimeout.current);
     }
@@ -107,7 +99,7 @@ const MessageList: React.FC<MessageListProps> = ({ chatId }) => {
     // Set a new timeout to reset isUserScrolling
     scrollTimeout.current = setTimeout(() => {
       isUserScrolling.current = false;
-    }, 150); // 150ms
+    }, 150);
   };
 
   if (loading) return <Loading />;

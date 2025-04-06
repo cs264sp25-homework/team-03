@@ -9,7 +9,7 @@ export function useQueryMessages(chatId: Id<"chats">) {
   });
 
   return {
-    data: messages?.reverse() as MessageType[],
+    data: messages as MessageType[],
     loading: messages === undefined,
     error: messages === null,
   };
