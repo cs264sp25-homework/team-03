@@ -30,10 +30,6 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showChat, setShowChat] = useState(false);
   const [hasCreatedChat, setHasCreatedChat] = useState(false);
-  
-  //TODO: remove
-  console.log(hasCreatedChat);
-
 
   const { userId } = useUser();
 
@@ -41,7 +37,6 @@ function App() {
     localStorage.setItem("hasStarted", hasStarted.toString());
   }, [hasStarted]);
 
-  //TODO: getting chat
   const chat = useQueryUserChat();
   const { createDefaultChat } = useCreateChat();
 
@@ -74,52 +69,12 @@ function App() {
     tab.url?.toLowerCase().includes(searchQuery.toLowerCase())
   ), [tabs, searchQuery]);
 
-  const handleExtractText = async (tab: chrome.tabs.Tab) => {
-    if (!tab.url || !tab.id) return;
-    
-    setSelectedTab(tab);
-    setIsLoading(true);
-    setError(undefined);
-    setExtractedText("");
-
+  const handleCreateChat = async () => {
     try {
-      interface ExtractTextResponse {
-        success: boolean;
-        text?: string;
-        error?: string;
-        metadata?: {
-          title: string;
-          excerpt: string;
-          siteName: string;
-        };
-      }
-
-      // Extract text using background script
-      const response = await new Promise<ExtractTextResponse>((resolve) => {
-        chrome.runtime.sendMessage({ 
-          type: 'extractText', 
-          tabId: tab.id 
-        }, resolve);
-      });
-      
-      if (!response?.success) {
-        throw new Error(response?.error || 'Failed to extract text');
-      }
-      
-      if (!response.text) {
-        throw new Error('No text extracted');
-      }
-      
-      setExtractedText(response.text);
-    } catch (err) {
-      console.error('Error:', err);
-      setError(
-        err instanceof Error 
-          ? err.message 
-          : 'Failed to extract text. Please try again.'
-      );
-    } finally {
-      setIsLoading(false);
+      await createDefaultChat();
+      setHasCreatedChat(true);
+    } catch (error) {
+      console.error("Failed to create chat:", error);
     }
   };
 
