@@ -2,9 +2,20 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { StartPage } from "@/pages/start-page";
 import { useUser } from "@/hooks/useUser";
-import { Button } from "@/components/ui/button";
-import { TextPreviewModal } from "@/components/text-preview-modal";
-import { FileText } from "lucide-react";
+//import { Button } from "@/components/ui/button";
+//import { TextPreviewModal } from "@/components/text-preview-modal";
+import { FileText, MessageSquare } from "lucide-react";
+import { TabList } from "@/components/tabs/TabList";
+import { TabSearch } from "@/components/tabs/TabSearch";
+import { ChatPlaceholder } from "@/components/chat/ChatPlaceholder";
+import { ChatCreationView } from "@/components/chat/ChatCreationView";
+import { useQueryUserChat } from "@/hooks/use-query-user-chat";
+import { useCreateChat } from "@/hooks/useCreateChat";
+import MessagesPage from "@/pages/messages/messages-page";
+
+//TODO:
+//app state doesn't persist when popup closed
+//initial load has error from getting all chats (auth.ts)
 declare global {
   interface Window {
     chrome: typeof chrome;
@@ -17,16 +28,22 @@ function App() {
   });
   const [tabs, setTabs] = useState<chrome.tabs.Tab[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTab, setSelectedTab] = useState<chrome.tabs.Tab | null>(null);
-  const [extractedText, setExtractedText] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string>();
+  const [showChat, setShowChat] = useState(false);
+  const [hasCreatedChat, setHasCreatedChat] = useState(false);
   
-  useUser();
+  //TODO: remove
+  console.log(hasCreatedChat);
+
+
+  const { userId } = useUser();
 
   useEffect(() => {
     localStorage.setItem("hasStarted", hasStarted.toString());
   }, [hasStarted]);
+
+  //TODO: getting chat
+  const chat = useQueryUserChat();
+  const { createDefaultChat } = useCreateChat();
 
   const updateTabs = useCallback(() => {
     chrome.runtime.sendMessage({type: "getTabs"}, (response) => {
@@ -113,76 +130,48 @@ function App() {
   return (
     <MainLayout>
       <div className="flex flex-col w-full h-full">
-        <div className="sticky top-0 z-10 border-b bg-background">
-          <div className="px-4 py-3">
-            <input
-              type="text"
-              placeholder="Search tabs..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 placeholder-gray-500 border border-gray-600 rounded-lg dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background text-foreground"
-            />
-          </div>
+        <div className="flex border-b">
+          <button
+            className={`flex-1 p-3 flex items-center justify-center gap-2 ${
+              !showChat ? 'bg-muted' : ''
+            }`}
+            onClick={() => setShowChat(false)}
+          >
+            <FileText className="w-4 h-4" />
+            <span>Tabs</span>
+          </button>
+          <button
+            className={`flex-1 p-3 flex items-center justify-center gap-2 ${
+              showChat ? 'bg-muted' : ''
+            }`}
+            onClick={() => setShowChat(true)}
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span>Chat</span>
+          </button>
         </div>
         
-        <div className="flex-1 px-4 py-3 overflow-y-auto">
-          <div className="space-y-3">
-            {filteredTabs.map((tab) => (
-              <div
-                key={tab.id}
-                className="flex items-start gap-3 p-3 transition-colors border border-gray-600 rounded-lg dark:border-gray-700 bg-background hover:bg-muted"
-              >
-                <div 
-                  className="flex-1 min-w-0 cursor-pointer"
-                  onClick={() => chrome.tabs.update(tab.id!, { active: true })}
-                >
-                  <div className="flex items-start gap-3">
-                    {tab.favIconUrl && (
-                      <img
-                        src={tab.favIconUrl}
-                        alt=""
-                        className="flex-shrink-0 w-4 h-4 mt-1"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium truncate text-foreground">
-                        {tab.title}
-                      </h3>
-                      <p className="text-xs truncate text-muted-foreground">
-                        {tab.url}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-shrink-0"
-                  onClick={() => handleExtractText(tab)}
-                >
-                  <FileText className="w-4 h-4 mr-1" />
-                  Extract Text
-                </Button>
-              </div>
-            ))}
-            
-            {filteredTabs.length === 0 && (
-              <div className="py-8 text-center text-muted-foreground">
-                {searchQuery ? "No matching tabs found" : "No open tabs"}
-              </div>
-            )}
-          </div>
-        </div>
+        {!showChat ? (
+          <>
+            <TabSearch 
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+            />
+            <TabList 
+              tabs={filteredTabs}
+              searchQuery={searchQuery}
+            />
+          </>
+        ) : userId ? (
+          chat ? (
+            <MessagesPage chatId={chat._id} />
+          ) : (
+            <ChatCreationView onCreateChat={handleCreateChat} />
+          )
+        ) : (
+          <ChatPlaceholder />
+        )}
       </div>
-
-      <TextPreviewModal
-        isOpen={!!selectedTab}
-        onClose={() => setSelectedTab(null)}
-        text={extractedText}
-        url={selectedTab?.url || ""}
-        isLoading={isLoading}
-        error={error}
-      />
     </MainLayout>
   );
 }

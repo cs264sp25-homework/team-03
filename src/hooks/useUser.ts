@@ -2,7 +2,7 @@ import { useMutation } from "convex/react";
 import { useSessionId } from "convex-helpers/react/sessions";
 import { useEffect, useState } from "react";
 import { api } from "../../convex/_generated/api";
-import { Id } from "../../convex/_generated/dataModel";
+import { Id } from "convex/_generated/dataModel";
 
 export function useUser() {
   const [userId, setUserId] = useState<Id<"users"> | null>(null);
@@ -10,15 +10,15 @@ export function useUser() {
   const createOrGetUser = useMutation(api.users.createOrGetUser);
 
   useEffect(() => {
-    if (sessionId) {
-      createOrGetUser({sessionId})
-        .then(newUserId => {
+    if (sessionId && !userId) {
+      createOrGetUser({ sessionId })
+        .then((newUserId: Id<"users">) => {
           setUserId(newUserId);
           console.log("🔑 User ID:", newUserId);
         })
         .catch(console.error);
     }
-  }, [sessionId, createOrGetUser]);
+  }, [sessionId, createOrGetUser, userId]);
 
   return { userId, sessionId };
 } 
