@@ -85,6 +85,12 @@ export const create = mutation({
       });
     }
 
+    // Get all messages in the chat so far
+    const messages = await ctx.db
+      .query("messages")
+      .withIndex("by_chat_id", (q) => q.eq("chatId", args.chatId))
+      .collect();
+
     // Store the user message
     const messageId = await ctx.db.insert("messages", {
       chatId: args.chatId,
@@ -92,14 +98,9 @@ export const create = mutation({
       role: "user",
     });
 
-    // Get all messages in the chat so far
-    const messages = await ctx.db
-      .query("messages")
-      .withIndex("by_chat_id", (q) => q.eq("chatId", args.chatId))
-      .collect();
-
-    // Store a placeholder message for the assistant
-    const placeholderMessageId = await ctx.db.insert("messages", {
+    // Create a placeholder for the assistant's response
+    
+   const placeholderMessageId = await ctx.db.insert("messages", {
       chatId: args.chatId,
       content: "...",
       role: "assistant",
@@ -110,13 +111,19 @@ export const create = mutation({
       messageCount: chat.messageCount + 2,
     });
 
-    // Schedule an action that calls ChatGPT and updates the message.
+    // Schedule an action that calls ChatGPT and updates the message
     ctx.scheduler.runAfter(0, internal.openai.completion, {
-      chatId: args.chatId, // 👀 Look here
-      messages: messages.map((message) => ({
-        role: message.role,
-        content: message.content,
-      })),
+      chatId: args.chatId,
+      messages: [
+        ...messages.map((message) => ({
+          role: message.role,
+          content: message.content,
+        })),
+        {
+          role: "user",
+          content: args.content,
+        },
+      ],
       placeholderMessageId,
     });
 

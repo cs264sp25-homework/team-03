@@ -8,7 +8,7 @@ export function useQueryChats() {
   const chats = useSessionQuery(api.chats.getAll, {});
 
   return {
-    data: chats as ChatType[] | undefined,
+    data: chats ? (chats as ChatType[]) : [],
     loading: chats === undefined,
     error: chats === null,
   };

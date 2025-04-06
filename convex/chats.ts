@@ -37,6 +37,20 @@ export const getOne = queryWithSession({
   },
 });
 
+export const getUserChat = queryWithSession({
+  args: {},
+  handler: async (ctx) => {
+    // Get user ID from session
+    const userId = await authenticationGuard(ctx, ctx.sessionId);
+    
+    // Get the first chat for this user (default chat)
+    const chat = await ctx.db.query("chats")
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .first();
+    
+    return chat;
+  },
+});
 
 export const create = mutationWithSession({
   args: {

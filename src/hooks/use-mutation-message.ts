@@ -1,25 +1,30 @@
-import { api } from "../../convex/_generated/api";
-import { Id } from "convex/_generated/dataModel";
-import { useSessionMutation } from "convex-helpers/react/sessions";
+import { UpdateMessageType } from "@/types/message";
 import { toast } from "sonner";
 
-export function useMutationMessage(chatId: Id<"chats">) {
-  const createMutation = useSessionMutation(api.messages.create);
-
-  const createMessage = async (content: string): Promise<boolean> => {
+export function useMutationMessage(messageId: string) {
+  const editMessage = async (message: UpdateMessageType): Promise<boolean> => {
     try {
-      await createMutation({
-        chatId,
-        content,
-      });
-      return true;
+      console.log(`Trying to update ${messageId}`, message);
+      throw new Error("Edit message not implemented");
     } catch (error) {
-      toast((error as Error).message || "Please try again later");
+      toast.error((error as Error).message || "Please try again later");
+      return false;
+    }
+  };
+
+  // TODO: We may want to remove this feature!
+  const deleteMessage = async (): Promise<boolean> => {
+    try {
+      console.log(`Trying to delete ${messageId}`);
+      throw new Error("Delete message not implemented");
+    } catch (error) {
+      toast.error((error as Error).message || "Please try again later");
       return false;
     }
   };
 
   return {
-    create: createMessage,
+    edit: editMessage,
+    delete: deleteMessage,
   };
 }

@@ -10,7 +10,7 @@ import { getUser } from "../lib/sessions";
  */
 export const authenticationGuard = async (ctx: QueryCtx, sessionId: SessionId) => {
   const user = await getUser(ctx, sessionId);
-
+  //console.log("user", user);
   if (!user) {
     throw new ConvexError({
       message: "Invalid session",
