@@ -45,15 +45,10 @@ To set up the development environment:
 pnpm install
 ```
 
-3. Start the development servers:
-   - For the Convex backend:
-   ```shell
-   npx convex dev
-   ```
-   - For the frontend (in a separate terminal):
-   ```shell
-   npm run dev
-   ```
+3. Start the Convex backend:
+```shell
+npx convex dev
+```
 
 4. Build and test changes:
    - After making changes, run:
