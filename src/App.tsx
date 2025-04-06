@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { StartPage } from "@/pages/start-page";
 import { useUser } from "@/hooks/useUser";
-import { Button } from "@/components/ui/button";
-import { TextPreviewModal } from "@/components/text-preview-modal";
-import { FileText } from "lucide-react";
-import { FLASK_URL } from "@/env";
+import { TabList } from "@/components/tabs/TabList";
+import { TabSearch } from "@/components/tabs/TabSearch";
+
 declare global {
   interface Window {
     chrome: typeof chrome;
@@ -18,10 +17,6 @@ function App() {
   });
   const [tabs, setTabs] = useState<chrome.tabs.Tab[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTab, setSelectedTab] = useState<chrome.tabs.Tab | null>(null);
-  const [extractedText, setExtractedText] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string>();
   
   useUser();
 
@@ -37,42 +32,6 @@ function App() {
     });
   }, []);
 
-  const filteredTabs = useMemo(() => tabs.filter(tab => 
-    tab.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    tab.url?.toLowerCase().includes(searchQuery.toLowerCase())
-  ), [tabs, searchQuery]);
-
-  const handleExtractText = async (tab: chrome.tabs.Tab) => {
-    if (!tab.url) return;
-    
-    setSelectedTab(tab);
-    setIsLoading(true);
-    setError(undefined);
-    setExtractedText("");
-
-    try {
-      console.log('calling server', `${FLASK_URL}/extract`);
-      const response = await fetch(`${FLASK_URL}/extract`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url: tab.url }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to extract text');
-      }
-
-      const data = await response.json();
-      setExtractedText(data.text);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to extract text');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   if (!hasStarted) {
     return <StartPage onStart={() => setHasStarted(true)} />;
   }
@@ -80,76 +39,15 @@ function App() {
   return (
     <MainLayout>
       <div className="flex flex-col w-full h-full">
-        <div className="sticky top-0 z-10 border-b bg-background">
-          <div className="px-4 py-3">
-            <input
-              type="text"
-              placeholder="Search tabs..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 placeholder-gray-500 border border-gray-600 rounded-lg dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background text-foreground"
-            />
-          </div>
-        </div>
-        
-        <div className="flex-1 px-4 py-3 overflow-y-auto">
-          <div className="space-y-3">
-            {filteredTabs.map((tab) => (
-              <div
-                key={tab.id}
-                className="flex items-start gap-3 p-3 transition-colors border border-gray-600 rounded-lg dark:border-gray-700 bg-background hover:bg-muted"
-              >
-                <div 
-                  className="flex-1 min-w-0 cursor-pointer"
-                  onClick={() => chrome.tabs.update(tab.id!, { active: true })}
-                >
-                  <div className="flex items-start gap-3">
-                    {tab.favIconUrl && (
-                      <img
-                        src={tab.favIconUrl}
-                        alt=""
-                        className="flex-shrink-0 w-4 h-4 mt-1"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium truncate text-foreground">
-                        {tab.title}
-                      </h3>
-                      <p className="text-xs truncate text-muted-foreground">
-                        {tab.url}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-shrink-0"
-                  onClick={() => handleExtractText(tab)}
-                >
-                  <FileText className="w-4 h-4 mr-1" />
-                  Extract Text
-                </Button>
-              </div>
-            ))}
-            
-            {filteredTabs.length === 0 && (
-              <div className="py-8 text-center text-muted-foreground">
-                {searchQuery ? "No matching tabs found" : "No open tabs"}
-              </div>
-            )}
-          </div>
-        </div>
+        <TabSearch 
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+        />
+        <TabList 
+          tabs={tabs}
+          searchQuery={searchQuery}
+        />
       </div>
-
-      <TextPreviewModal
-        isOpen={!!selectedTab}
-        onClose={() => setSelectedTab(null)}
-        text={extractedText}
-        url={selectedTab?.url || ""}
-        isLoading={isLoading}
-        error={error}
-      />
     </MainLayout>
   );
 }

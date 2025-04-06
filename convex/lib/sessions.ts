@@ -11,6 +11,7 @@ import {
 } from "convex-helpers/server/sessions";
 import { QueryCtx } from "../_generated/server";
 
+
 export async function getUser(ctx: QueryCtx, sessionId: SessionId) {
   const user = await ctx.db
     .query("users")
@@ -21,9 +22,9 @@ export async function getUser(ctx: QueryCtx, sessionId: SessionId) {
 
 export const queryWithSession = customQuery(query, {
   args: SessionIdArg,
-  input: async (ctx, { sessionId }) => {
+  input: async (ctx, { sessionId, ...args }) => {
     const user = await getUser(ctx, sessionId);
-    return { ctx: { ...ctx, user, sessionId }, args: {} };
+    return { ctx: { ...ctx, user, sessionId }, args };
   },
 });
 

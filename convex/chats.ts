@@ -42,14 +42,23 @@ export const create = mutationWithSession({
   args: {
     title: v.string(),
     description: v.optional(v.string()),
+    groupId: v.optional(v.id("tabGroups")),
   },
   handler: async (ctx, args) => {
     const userId = await authenticationGuard(ctx, ctx.sessionId);
     
+    // If groupId provided, verify it exists and belongs to user
+    if (args.groupId) {
+      const group = await ctx.db.get(args.groupId);
+      if (!group) throw new Error("Group not found");
+      ownershipGuard(userId, group.userId);
+    }
+    
     const chatId = await ctx.db.insert("chats", {
-      userId,  // Associate chat with the authenticated user
+      userId,
       title: args.title,
       description: args.description,
+      groupId: args.groupId,
       messageCount: 0,
       tabCount: 0,
     });
