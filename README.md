@@ -1,28 +1,91 @@
-# PGAi Team Project
+# TabAssist
 
-Name of the application goes here -- followed by a brief description (elevator pitch) of the application.
+TabAssist is a Chrome extension that helps you manage and interact with your browser tabs using AI. It allows you to extract and analyze content from your open tabs, and engage in AI-powered conversations about the content.
 
 ## Installing / Getting started
 
-A quick introduction of the minimal setup you need to get the app up & running on a local computer. For example, your advisor might use the instruction here to run the application locally.
+To get started with TabAssist, follow these steps:
 
+1. Clone the repository:
 ```shell
-commands here
+git clone https://github.com/cs264sp25-homework/team-03
+cd team-03
 ```
+
+2. Install dependencies:
+```shell
+pnpm install
+```
+
+3. Start the Convex backend:
+```shell
+npx convex dev
+```
+
+4. Build the Chrome extension:
+```shell
+npm run build
+```
+
+5. Load the extension in Chrome:
+   - Open Chrome and go to `chrome://extensions/`
+   - Enable "Developer mode" in the top right corner
+   - Click "Load unpacked"
+   - Select the `build` folder from your project directory
+
+The extension should now be installed and ready to use in your Chrome browser.
 
 ## Developing
 
-Detailed and step-by-step documentation for setting up local development. For example, a new team member will use these instructions to start developing the project further. 
+To set up the development environment:
 
+1. Install Node.js (v16 or higher) and npm
+2. Install the project dependencies:
 ```shell
-commands here
+pnpm install
 ```
 
-You should include what is needed (e.g. all of the configurations) to set up the dev environment. For instance, global dependencies or any other tools (include download links), explaining what database (and version) has been used, etc. If there is any virtual environment, local server, ..., explain here. 
+3. Start the development servers:
+   - For the Convex backend:
+   ```shell
+   npx convex dev
+   ```
+   - For the frontend (in a separate terminal):
+   ```shell
+   npm run dev
+   ```
 
-Additionally, describe and show how to run the tests, explain your code style and show how to check it.
+4. Build and test changes:
+   - After making changes, run:
+   ```shell
+   npm run build
+   ```
+   - Reload the extension in Chrome to see your changes
 
-If your project needs some additional steps for the developer to build the project after some code changes, state them here. Moreover, give instructions on how to build and release a new version. In case there's some step you have to take that publishes this project to a server, it must be stated here. 
+### Database
+The application uses Convex as its backend database. Convex provides:
+- Real-time data synchronization
+- Automatic schema validation
+- Built-in authentication
+- Serverless functions
+- Type-safe database queries
+
+The database schema is defined in the `convex/schema.ts` file and includes tables for:
+- Users
+- Chats
+- Messages
+- Tab content
+
+### Project Structure
+- `src/` - Frontend React application
+- `convex/` - Backend Convex functions
+- `public/` - Static assets and extension manifest
+- `build/` - Production build output
+
+### Code Style
+- Follow TypeScript best practices
+- Use ESLint for code linting
+- Use Prettier for code formatting
 
 ## Licensing
 
