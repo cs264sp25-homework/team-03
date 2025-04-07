@@ -40,6 +40,22 @@ function App() {
   const chat = useQueryUserChat();
   const { createDefaultChat } = useCreateChat();
 
+  // Handle selection data and navigation
+  useEffect(() => {
+    const handleMessage = (message: any) => {
+      console.log('App received message:', message);
+      if (message.type === "selection") {
+        console.log('App handling selection, navigating to chat');
+        setShowChat(true);
+      }
+    };
+
+    chrome.runtime.onMessage.addListener(handleMessage);
+    return () => {
+      chrome.runtime.onMessage.removeListener(handleMessage);
+    };
+  }, []);
+
   const updateTabs = useCallback(() => {
     chrome.runtime.sendMessage({type: "getTabs"}, (response) => {
       if (response?.tabs) {

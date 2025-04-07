@@ -1,10 +1,26 @@
+// Store the last selection
+let lastSelection = null;
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log('Background received message:', message);
+
   // Handle get tabs request
   if (message.type === "getTabs") {
     chrome.tabs.query({currentWindow: true}, (tabs) => {
       sendResponse({tabs: tabs});
     });
     return true; // Required for async response
+  }
+
+  // Handle get selection request
+  if (message.type === "getSelection") {
+    console.log('Popup requested selection data, sending:', lastSelection);
+    sendResponse({ 
+      selection: lastSelection,
+      action: lastSelection?.action // Include the action in the response
+    });
+    lastSelection = null; // Clear after sending
+    return true;
   }
 
   // Handle extract text request
@@ -127,5 +143,42 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       url: tab.url,
       title: tab.title
     });
+  }
+});
+
+// Add context menu for text selection
+chrome.contextMenus.create({
+  id: "askAboutSelection",
+  title: "Ask About Selection",
+  contexts: ["selection"]
+});
+
+// Handle context menu clicks
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === "askAboutSelection" && tab?.id) {
+    // Store the selection data
+    lastSelection = {
+      type: "selection",
+      text: info.selectionText,
+      url: tab.url,
+      title: tab.title,
+      action: "navigateToChat"
+    };
+    
+    console.log('Stored selection data:', lastSelection);
+    
+    // Open the popup
+    chrome.action.openPopup();
+    
+    // Send the selection message to the popup
+    setTimeout(() => {
+      console.log('Sending selection message to popup');
+      chrome.runtime.sendMessage({
+        type: "selection",
+        text: info.selectionText,
+        url: tab.url,
+        title: tab.title
+      });
+    }, 100); // Small delay to ensure popup is open
   }
 });

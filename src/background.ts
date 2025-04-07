@@ -113,3 +113,26 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     // Here you can directly call your Convex mutation to update the tab in database
   }
 });
+
+// Add context menu for text selection
+chrome.contextMenus.create({
+  id: "askAboutSelection",
+  title: "Ask about selection",
+  contexts: ["selection"]
+});
+
+// Handle context menu clicks
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === "askAboutSelection" && tab?.id) {
+    // Get the selected text
+    const selectedText = info.selectionText;
+    
+    // Send message to popup with the selected text and URL
+    chrome.runtime.sendMessage({
+      type: "selection",
+      text: selectedText,
+      url: tab.url,
+      title: tab.title
+    });
+  }
+});
