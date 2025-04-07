@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { MessageType } from "@/types/message";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Check,
   Copy,
@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { AutosizeTextarea } from "@/components/ui/autoresize-textarea";
 import Markdown from "@/components/markdown";
+import logo from "../../../public/tabAssistLogo.png";// Import from public folder root
 
 const DEBUG = false;
 
@@ -63,11 +64,18 @@ const Message: React.FC<MessageProps> = ({ message }) => {
           "border-2 border-blue-500": DEBUG,
         })}
       >
-        <Avatar className="w-9 h-9">
+        <Avatar className="w-9 h-9 bg-white">
           {isAssistant ? (
-            <AvatarFallback className="bg-primary/10">
-              <MessageSquareCode className="w-5 h-5 text-primary" />
-            </AvatarFallback>
+            <>
+              <AvatarImage 
+                src={logo} 
+                alt="Assistant" 
+                className="object-contain p-1" // Added padding and contain to fit logo
+              />
+              <AvatarFallback className="bg-primary/10">
+                <MessageSquareCode className="w-5 h-5 text-primary" />
+              </AvatarFallback>
+            </>
           ) : (
             <AvatarFallback className="bg-secondary">
               <User2 className="w-5 h-5 text-secondary-foreground" />

@@ -57,7 +57,8 @@ export default defineSchema({
     error: v.optional(v.string()),
   })
   .index("by_user_id", ["userId"])
-  .index("by_group_id", ["groupId"]),
+  .index("by_group_id", ["groupId"])
+  .index("by_user_and_url", ["userId", "url"]),
   
   
   chats: defineTable({

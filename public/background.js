@@ -96,4 +96,36 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     })();
     return true; // Required for async response
   }
+
+  if (message.type === 'tabRemoved') {
+    // Handle tab removal
+    console.log('Tab was removed:', message.tabId);
+  }
+  if (message.type === 'tabUpdated') {
+    // Handle tab update
+    console.log('Tab was updated:', message.tabId, message.url);
+  }
+});
+
+// Add tab event listeners that send messages
+chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+  console.log('Tab removed:', tabId, 'window:', removeInfo.windowId);
+  chrome.runtime.sendMessage({
+    type: 'tabRemoved',
+    tabId: tabId,
+    windowId: removeInfo.windowId,
+    isWindowClosing: removeInfo.isWindowClosing
+  });
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete') {
+    console.log('Tab updated:', tabId, 'url:', tab.url);
+    chrome.runtime.sendMessage({
+      type: 'tabUpdated',
+      tabId: tabId,
+      url: tab.url,
+      title: tab.title
+    });
+  }
 });
