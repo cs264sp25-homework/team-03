@@ -3,9 +3,9 @@ import { Id } from "convex/_generated/dataModel";
 import { TabWithRelations } from "@/types/tab";
 import { useSessionQuery } from "convex-helpers/react/sessions";
 
-export function useQueryTabs(groupId?: Id<"tabGroups">) {
+export function useQueryTabs(tabGroupId?: Id<"tabGroups">) {
   const tabs = useSessionQuery(api.tabs.getAll, {
-    groupId,
+    tabGroupId,
   });
 
   return {

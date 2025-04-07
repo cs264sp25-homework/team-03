@@ -4,7 +4,7 @@ import { Id } from "../../convex/_generated/dataModel";
 export const createChatSchema = z.object({
   title: z.string().min(2).max(50),
   description: z.optional(z.string().min(2).max(200)),
-  groupId: z.optional(z.string()), // Optional tab group ID
+  tabGroupId: z.optional(z.string()), // Optional tab group ID
 });
 
 export const updateChatSchema = createChatSchema.partial();

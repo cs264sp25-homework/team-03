@@ -2,6 +2,15 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { vSessionId } from "convex-helpers/server/sessions";
 
+export const tabStatuses = v.union(
+  v.literal("pending"),
+  v.literal("processing"),
+  v.literal("text extracted"),
+  v.literal("chunking"),
+  v.literal("embedding"),
+  v.literal("processed"),
+  v.literal("failed"),
+);
 
 //TODO: tabGroups not implemented yet
 
@@ -50,26 +59,27 @@ export default defineSchema({
 
   tabs: defineTable({
     userId: v.id("users"),  // Each tab belongs to a user
-    groupId: v.optional(v.id("tabGroups")), // Optional: Link to its group
+    tabGroupId: v.optional(v.id("tabGroups")), // Optional: Link to its group
     url: v.string(),
     name: v.optional(v.string()), 
     content: v.optional(v.string()),
     error: v.optional(v.string()),
+    status: tabStatuses,
   })
   .index("by_user_id", ["userId"])
-  .index("by_group_id", ["groupId"]),
+  .index("by_group_id", ["tabGroupId"]),
   
   
   chats: defineTable({
     userId: v.id("users"),  // Each chat belongs to a user
-    groupId: v.optional(v.id("tabGroups")),  //Optional: Link chat to a tab group
+    tabGroupId: v.optional(v.id("tabGroups")),  //Optional: Link chat to a tab group
     title: v.string(),
     description: v.optional(v.string()),
     messageCount: v.number(),
     tabCount: v.number(),
-  }) 
+  })
   .index("by_user_id", ["userId"])
-  .index("by_group_id", ["groupId"]),
+  .index("by_group_id", ["tabGroupId"]),
 
   messages: defineTable({
     chatId: v.id("chats"),

@@ -12,7 +12,7 @@ export function useMutationChats() {
       await createMutation({
         title: chat.title,
         description: chat.description,
-        groupId: chat.groupId ? (chat.groupId as Id<"tabGroups">) : undefined,
+        tabGroupId: chat.tabGroupId ? (chat.tabGroupId as Id<"tabGroups">) : undefined,
       });
       return true;
     } catch (error) {

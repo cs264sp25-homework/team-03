@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TextPreviewModal } from "@/components/text-preview-modal";
 import { FileText } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 //import { ChromeTab } from "@/types/tab";
 
@@ -10,6 +11,8 @@ interface TabListProps {
   tabs: chrome.tabs.Tab[];
   searchQuery: string;
 }
+
+const debug = import.meta.env.VITE_NODE_ENV === "development";
 
 export function TabList({ tabs, searchQuery }: TabListProps) {
   const [selectedTab, setSelectedTab] = useState<chrome.tabs.Tab | null>(null);
@@ -72,7 +75,7 @@ export function TabList({ tabs, searchQuery }: TabListProps) {
   };
 
   return (
-    <>
+    <div className={cn(debug && "border border-red-500")}>
       <div className="flex-1 px-4 py-3 overflow-y-auto">
         <div className="space-y-3">
           {filteredTabs.map((tab) => (
@@ -130,6 +133,6 @@ export function TabList({ tabs, searchQuery }: TabListProps) {
         isLoading={isLoading}
         error={error}
       />
-    </>
+    </div>
   );
 } 

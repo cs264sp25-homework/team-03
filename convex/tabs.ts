@@ -10,7 +10,7 @@ import { internalQuery } from "./_generated/server";
 
 export const getAll = queryWithSession({
   args: {
-    groupId: v.optional(v.id("tabGroups")), // Optional: get tabs for a specific group
+    tabGroupId: v.optional(v.id("tabGroups")), // Optional: get tabs for a specific group
   },
   handler: async (ctx, args) => {
     const userId = await authenticationGuard(ctx, ctx.sessionId);
@@ -19,9 +19,9 @@ export const getAll = queryWithSession({
     let query = ctx.db.query("tabs")
       .withIndex("by_user_id", (q) => q.eq("userId", userId));
     
-    // If groupId provided, filter by group
-    if (args.groupId) {
-      query = query.filter((q) => q.eq(q.field("groupId"), args.groupId));
+    // If tabGroupId provided, filter by group
+    if (args.tabGroupId) {
+      query = query.filter((q) => q.eq(q.field("tabGroupId"), args.tabGroupId));
     }
     
     return query.collect();
@@ -60,14 +60,14 @@ export const create = mutationWithSession({
   args: {
     url: v.string(),
     name: v.optional(v.string()),
-    groupId: v.optional(v.id("tabGroups")),
+    tabGroupId: v.optional(v.id("tabGroups")),
   },
   handler: async (ctx, args) => {
     const userId = await authenticationGuard(ctx, ctx.sessionId);
     
     // If groupId provided, verify it exists and belongs to user
-    if (args.groupId) {
-      const group = await ctx.db.get(args.groupId);
+    if (args.tabGroupId) {
+      const group = await ctx.db.get(args.tabGroupId);
       if (!group) throw new Error("Group not found");
       ownershipGuard(userId, group.userId);
     }
@@ -75,11 +75,12 @@ export const create = mutationWithSession({
     // Create the tab
     const tabId = await ctx.db.insert("tabs", {
       userId,
-      groupId: args.groupId,
+      tabGroupId: args.tabGroupId,
       url: args.url,
       name: args.name,
       content: undefined,
       error: undefined,
+      status: "pending",
     });
 
     return tabId;
@@ -92,7 +93,7 @@ export const update = mutationWithSession({
     url: v.optional(v.string()),
     name: v.optional(v.string()),
     content: v.optional(v.string()),
-    groupId: v.optional(v.id("tabGroups")),
+    tabGroupId: v.optional(v.id("tabGroups")),
   },
   handler: async (ctx, args) => {
     const userId = await authenticationGuard(ctx, ctx.sessionId);
@@ -104,8 +105,8 @@ export const update = mutationWithSession({
     ownershipGuard(userId, tab.userId);
 
     // If changing group, verify new group exists and belongs to user
-    if (args.groupId) {
-      const group = await ctx.db.get(args.groupId);
+    if (args.tabGroupId) {
+      const group = await ctx.db.get(args.tabGroupId);
       if (!group) throw new Error("Group not found");
       ownershipGuard(userId, group.userId);
     }
