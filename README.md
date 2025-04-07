@@ -1,64 +1,168 @@
 # TabAssist
 
-TabAssist is a Chrome extension that helps you manage and interact with your browser tabs using AI. It allows you to extract and analyze content from your open tabs, and engage in AI-powered conversations about the content.
+TabAssist is a Chrome extension that helps you manage and interact with your browser tabs using AI. It allows you to extract and analyze content from your open tabs and engage in AI-powered conversations about the content.
 
-## Installing / Getting started
+## Features
 
-To get started with TabAssist, follow these steps:
+- **Tab Management**: View and search all your open tabs in one place
+- **Content Extraction**: Extract and analyze text from any webpage
+- **AI Chat**: Ask questions about your tab content using AI
 
-1. Clone the repository:
+## Installation Guide
+
+TabAssist is currently available as a local development version. Follow these comprehensive steps to set it up:
+
+### Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **Node.js** (v16 or higher) - [Download Node.js](https://nodejs.org/)
+- **npm** or **pnpm** package manager - pnpm is recommended and can be installed with `npm install -g pnpm`
+- **Git** - [Download Git](https://git-scm.com/downloads)
+- **Google Chrome** browser - [Download Chrome](https://www.google.com/chrome/)
+
+### Step 1: Clone the Repository
+
 ```shell
+# Clone the repository
 git clone https://github.com/cs264sp25-homework/team-03
+
+# Navigate to the project directory
 cd team-03
 ```
 
-2. Install dependencies:
+### Step 2: Install Dependencies
+
 ```shell
+# Using pnpm (recommended)
 pnpm install
+
+# OR using npm with legacy peer deps flag to resolve dependency conflicts
+npm install --legacy-peer-deps
 ```
 
-3. Start the Convex backend:
+### Step 3: Set Up Environment Variables (if needed)
+
+If the project requires environment variables:
+
+1. Create a `.env` file in the root directory
+2. Add any required environment variables (check for a `.env.example` file)
+
+### Step 4: Start the Convex Backend
+
+TabAssist uses Convex for its backend services. Start the Convex development server:
+
 ```shell
 npx convex dev
 ```
 
-4. Build the Chrome extension:
+This command will start the Convex backend server, which handles data storage, retrieval, and real-time updates. Keep this terminal window open while using the extension.
+
+### Step 5: Build the Chrome Extension
+
+In a new terminal window, build the extension:
+
 ```shell
 npm run build
 ```
 
-5. Load the extension in Chrome:
-   - Open Chrome and go to `chrome://extensions/`
-   - Enable "Developer mode" in the top right corner
-   - Click "Load unpacked"
-   - Select the `build` folder from your project directory
+This command compiles the TypeScript code and creates a production-ready build in the `build` directory.
 
-The extension should now be installed and ready to use in your Chrome browser.
+### Step 6: Load the Extension in Chrome
 
-## Developing
+1. Open Google Chrome
+2. Navigate to `chrome://extensions/` in the address bar
+3. Enable **Developer mode** by toggling the switch in the top-right corner
+4. Click the **Load unpacked** button that appears
+5. Browse to and select the `build` folder from your project directory
+6. The TabAssist extension should now appear in your extensions list
 
-To set up the development environment:
+### Step 7: Verify Installation
 
-1. Install Node.js (v16 or higher) and npm
-2. Install the project dependencies:
+1. Look for the TabAssist icon in your Chrome toolbar (top-right corner)
+2. If you don't see it, click the puzzle piece icon to see all extensions and pin TabAssist
+3. Click the TabAssist icon to open the extension popup
+4. You should see a list of your open tabs and the extension interface
+
+## Using TabAssist
+
+Once installed, here's how to use the main features of TabAssist:
+
+### Basic Usage
+
+1. **View All Tabs**: When you open TabAssist, you'll see a list of all your open tabs
+2. **Search Tabs**: Use the search bar at the top to filter tabs by title or URL
+3. **Switch to a Tab**: Click on any tab in the list to switch to it in your browser
+4. **Extract Content**: Click the **Extract** button on any tab to analyze its content
+5. **View Extracted Text**: The extracted text will appear in a modal window
+
+
+
+### Using AI Chat
+
+1. Click the **Chat** tab at the top of the extension
+2. Type your question about tab content in the message input
+3. The AI will respond based on the content of your tabs
+
+## Development Workflow
+
+For developers who want to modify or enhance TabAssist, follow these steps:
+
+### Making Changes
+
+1. **Frontend Changes**:
+   - Edit files in the `src` directory
+   - Key components are in `src/components`
+
+2. **Backend Changes**:
+   - Edit files in the `convex` directory
+   - Database schema is in `convex/schema.ts`
+   - API endpoints are in files like `convex/tabs.ts`, `convex/chats.ts`, etc.
+
+3. **Extension Configuration**:
+   - The manifest file is at `public/manifest.json`
+   - Background scripts are in `public/background.js` and `src/background.ts`
+
+### Development Server
+
+For faster UI development, you can run the development server:
+
 ```shell
-pnpm install
+npm run dev
 ```
 
-3. Start the Convex backend:
-```shell
-npx convex dev
-```
+This starts a local server with hot reloading. Note that while this is useful for UI development, you'll still need to build and reload the extension to test it in Chrome.
 
-4. Build and test changes:
-   - After making changes, run:
+### Building and Testing
+
+After making changes:
+
+1. Build the extension:
    ```shell
    npm run build
    ```
-   - Reload the extension in Chrome to see your changes
 
-### Database
-The application uses Convex as its backend database. Convex provides:
+2. Update the extension in Chrome:
+   - Go to `chrome://extensions/`
+   - Find TabAssist in the list
+   - Click the refresh icon ↻ on the extension card
+   - Or toggle the extension off and on
+
+3. Test your changes by clicking the TabAssist icon in Chrome
+
+### Debugging
+
+- **Extension Popup**: Right-click on the extension popup and select **Inspect** to open DevTools
+- **Background Script**: Click **background page** in the extension details to view background script logs
+- **Console Logs**: Add `console.log()` statements to debug specific components or functions
+
+## Technical Details
+
+### Architecture
+
+TabAssist uses a dual backend architecture:
+
+1. **Convex Backend** (`/convex` directory):
 - Real-time data synchronization
 - Automatic schema validation
 - Built-in authentication
