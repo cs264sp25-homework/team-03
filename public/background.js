@@ -149,10 +149,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // Add context menu for text selection
-chrome.contextMenus.create({
-  id: "askAboutSelection",
-  title: "Ask About Selection",
-  contexts: ["selection"]
+chrome.contextMenus.removeAll(() => {
+  chrome.contextMenus.create({
+    id: "askAboutSelection",
+    title: "Ask About Selection",
+    contexts: ["selection"]
+  });
 });
 
 // Handle context menu clicks
