@@ -55,6 +55,27 @@ export const getOneInternal = internalQuery({
   },
 });
 
+export const getOneByUrl = mutationWithSession({
+  args: {
+    url: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await authenticationGuard(ctx, ctx.sessionId);
+    
+    // Find tab by URL for this user
+    const tab = await ctx.db
+      .query("tabs")
+      .withIndex("by_user_and_url", (q) => 
+        q.eq("userId", userId).eq("url", args.url)
+      )
+      .first();
+
+    if (!tab) return null;
+    
+    return tab;
+  },
+});
+
 
 export const create = mutationWithSession({
   args: {

@@ -13,6 +13,7 @@ import { useQueryUserChat } from "@/hooks/use-query-user-chat";
 import { useCreateChat } from "@/hooks/useCreateChat";
 import MessagesPage from "@/pages/messages/messages-page";
 
+
 //TODO:
 //app state doesn't persist when popup closed
 //initial load has error from getting all chats (auth.ts)
@@ -93,6 +94,23 @@ function App() {
       console.error("Failed to create chat:", error);
     }
   };
+
+  
+
+  // Add logging for tab changes
+  /*useEffect(() => {
+   
+    
+    const handleTabRemoved = (tabId: number, removeInfo: chrome.tabs.TabRemoveInfo) => {
+      console.log('Tab removed in App:', tabId, removeInfo);
+    };
+
+    chrome.tabs.onRemoved.addListener(handleTabRemoved);
+    return () => {
+      chrome.tabs.onRemoved.removeListener(handleTabRemoved);
+    };
+  }, []);
+*/
 
   if (!hasStarted) {
     return <StartPage onStart={() => setHasStarted(true)} />;

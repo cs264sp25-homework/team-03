@@ -1,15 +1,78 @@
+//TODO: tab remove doesn't work yet
+
 // Store the last selection
 let lastSelection = null;
 
+// Store tab URLs
+const tabUrls = new Map();
+
+// Store the last tab removed message
+let lastTabRemoved = null;
+
+// Track tab URLs when they're updated
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete' && tab.url) {
+    console.log('Background: Tracking tab URL:', tabId, tab.url);
+    tabUrls.set(tabId, tab.url);
+  }
+});
+
+// Add tab event listeners that send messages
+chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+  console.log('Background: Tab removed:', tabId, 'window:', removeInfo.windowId);
+  
+  // Get the URL from our stored URLs
+  const url = tabUrls.get(tabId);
+  if (url) {
+    console.log('Background: Found URL for removed tab:', url);
+    // Remove the tab from the backend
+    fetch('http://localhost:3000/api/remove-tab-by-url', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ url })
+    }).then(response => {
+      if (response.ok) {
+        console.log('Background: Tab removed from backend successfully');
+      } else {
+        console.log('Background: Error removing tab from backend:', response.status);
+      }
+    }).catch(error => {
+      console.log('Background: Error removing tab from backend:', error);
+    });
+    // Clean up the stored URL
+    tabUrls.delete(tabId);
+  } else {
+    console.log('Background: No URL found for removed tab');
+  }
+});
+
+// Handle messages from popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('Background received message:', message);
+
+  // Handle get last tab removed request
+  if (message.type === 'getLastTabRemoved') {
+    console.log('Background: Sending last tab removed:', lastTabRemoved);
+    sendResponse(lastTabRemoved);
+    lastTabRemoved = null;
+    return true;
+  }
+
+  // Handle test message
+  if (message.type === 'test') {
+    console.log('Background: Received test message');
+    sendResponse({ success: true });
+    return true;
+  }
 
   // Handle get tabs request
   if (message.type === "getTabs") {
     chrome.tabs.query({currentWindow: true}, (tabs) => {
       sendResponse({tabs: tabs});
     });
-    return true; // Required for async response
+    return true;
   }
 
   // Handle get selection request
@@ -17,9 +80,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('Popup requested selection data, sending:', lastSelection);
     sendResponse({ 
       selection: lastSelection,
-      action: lastSelection?.action // Include the action in the response
+      action: lastSelection?.action
     });
-    lastSelection = null; // Clear after sending
+    lastSelection = null;
     return true;
   }
 
@@ -110,39 +173,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
       }
     })();
-    return true; // Required for async response
+    return true;
   }
 
+  // Handle tab removed message
   if (message.type === 'tabRemoved') {
-    // Handle tab removal
-    console.log('Tab was removed:', message.tabId);
+    console.log('Background: Received tabRemoved message:', message);
+    // Send to all extension views (including popup)
+    chrome.runtime.sendMessage({
+      type: 'tabRemoved',
+      tabId: message.tabId,
+      url: message.url,
+      windowId: message.windowId,
+      isWindowClosing: message.isWindowClosing
+    }).then(() => {
+      console.log('Background: Tab removal message sent successfully');
+    }).catch(error => {
+      console.log('Background: Error sending tab removal message:', error);
+    });
+    return true;
   }
+
   if (message.type === 'tabUpdated') {
     // Handle tab update
     console.log('Tab was updated:', message.tabId, message.url);
-  }
-});
-
-// Add tab event listeners that send messages
-chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
-  console.log('Tab removed:', tabId, 'window:', removeInfo.windowId);
-  chrome.runtime.sendMessage({
-    type: 'tabRemoved',
-    tabId: tabId,
-    windowId: removeInfo.windowId,
-    isWindowClosing: removeInfo.isWindowClosing
-  });
-});
-
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete') {
-    console.log('Tab updated:', tabId, 'url:', tab.url);
-    chrome.runtime.sendMessage({
-      type: 'tabUpdated',
-      tabId: tabId,
-      url: tab.url,
-      title: tab.title
-    });
   }
 });
 

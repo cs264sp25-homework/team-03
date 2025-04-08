@@ -25,7 +25,6 @@ export function useMutationTabs() {
 
   const createTab = async (tab: CreateTabType): Promise<Id<"tabs"> | null> => {
     try {
-     
       const tabId = await createMutation({
         url: tab.url,
         name: tab.name,
@@ -34,7 +33,7 @@ export function useMutationTabs() {
       });
       return tabId;
     } catch (error) {
-      console.error("Error in createTab:", error); // Debug log
+      console.error("Error in createTab:", error);
       toast((error as Error).message || "Failed to create tab");
       return null;
     }
