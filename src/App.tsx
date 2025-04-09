@@ -14,9 +14,6 @@ import { useCreateChat } from "@/hooks/useCreateChat";
 import MessagesPage from "@/pages/messages/messages-page";
 
 
-//TODO:
-//app state doesn't persist when popup closed
-//initial load has error from getting all chats (auth.ts)
 declare global {
   interface Window {
     chrome: typeof chrome;
@@ -29,7 +26,9 @@ function App() {
   });
   const [tabs, setTabs] = useState<chrome.tabs.Tab[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showChat, setShowChat] = useState(false);
+  const [showChat, setShowChat] = useState(() => {
+    return localStorage.getItem("showChat") === "true";
+  });
   const [hasCreatedChat, setHasCreatedChat] = useState(false);
 
   const { userId } = useUser();
@@ -37,6 +36,11 @@ function App() {
   useEffect(() => {
     localStorage.setItem("hasStarted", hasStarted.toString());
   }, [hasStarted]);
+
+  // Update localStorage when showChat changes
+  useEffect(() => {
+    localStorage.setItem("showChat", showChat.toString());
+  }, [showChat]);
 
   const chat = useQueryUserChat();
   const { createDefaultChat } = useCreateChat();
