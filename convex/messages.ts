@@ -3,6 +3,7 @@ import { mutation, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { authenticationGuard } from "./guards/auth";
 import { queryWithSession } from "./lib/sessions";
+import { mutationWithSession } from "./lib/sessions";
 
 
 export const getAll = queryWithSession({
@@ -74,6 +75,7 @@ export const create = mutation({
   args: {
     chatId: v.id("chats"),
     content: v.string(),
+    sessionId: v.string(),
   },
   handler: async (ctx, args) => {
     // Check if the chat exists
@@ -99,8 +101,7 @@ export const create = mutation({
     });
 
     // Create a placeholder for the assistant's response
-    
-   const placeholderMessageId = await ctx.db.insert("messages", {
+    const placeholderMessageId = await ctx.db.insert("messages", {
       chatId: args.chatId,
       content: "...",
       role: "assistant",
@@ -113,6 +114,7 @@ export const create = mutation({
 
     // Schedule an action that calls ChatGPT and updates the message
     ctx.scheduler.runAfter(0, internal.openai.completion, {
+      sessionId: args.sessionId,
       chatId: args.chatId,
       messages: [
         ...messages.map((message) => ({

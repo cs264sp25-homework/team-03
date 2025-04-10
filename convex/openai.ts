@@ -2,12 +2,14 @@ import { createOpenAI, openai } from "@ai-sdk/openai";
 import { embedMany, streamText } from "ai";
 import { tool } from "ai";
 import { internalAction } from "./_generated/server";
-import {  internal } from "./_generated/api";
-//import { api } from "./_generated/api";
+import { internal, api } from "./_generated/api";
 import { v } from "convex/values";
 import { z } from "zod";
 import { Id } from "./_generated/dataModel";
+import { SessionId } from "convex-helpers/server/sessions";
 
+
+//TODO: i am using session id to get all related tabs, but down the line we will use chat id to get the tab group and then get all tabs related to that tab group
 export interface TextEmbedding {
   text: string;
   embedding: number[];
@@ -112,6 +114,7 @@ const ASSISTANT_INSTRUCTIONS = `You are a helpful assistant designed to answer q
 
 export const completion = internalAction({
   args: {
+    sessionId: v.string(),
     chatId: v.id("chats"),
     messages: v.array(
       v.object({
@@ -126,7 +129,12 @@ export const completion = internalAction({
     placeholderMessageId: v.id("messages"),
   },
   handler: async (ctx, args) => {
-    // TODO: Get tabs for this chat
+    // Get tabs for this session
+    const tabs = await ctx.runQuery(api.tabs.getAll, {
+      sessionId: args.sessionId as SessionId,
+    });
+
+    console.log("tabs:", tabs);
     
     const openai = createOpenAI({
       apiKey: process.env.OPENAI_API_KEY,

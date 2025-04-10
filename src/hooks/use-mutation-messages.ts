@@ -3,9 +3,11 @@ import { api } from "../../convex/_generated/api";
 import { Id } from "convex/_generated/dataModel";
 import { useMutation } from "convex/react";
 import { toast } from "sonner";
+import { useSessionId } from "convex-helpers/react/sessions";
 
 export function useMutationMessages(chatId: string) {
   const createMutation = useMutation(api.messages.create);
+  const [sessionId] = useSessionId();
 
   const createMessage = async (
     message: CreateMessageType,
@@ -14,6 +16,7 @@ export function useMutationMessages(chatId: string) {
       const messageId = await createMutation({
         content: message.content,
         chatId: chatId as Id<"chats">,
+        sessionId: sessionId as string,
       });
       return messageId as string;
     } catch (error) {
