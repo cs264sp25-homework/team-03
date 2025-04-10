@@ -107,7 +107,7 @@ export const create = mutationWithSession({
       await ctx.db.patch(existingTab._id, {
         name: args.name,
         content: args.content,
-        groupId: args.groupId
+        tabGroupId: args.tabGroupId
       });
       return existingTab._id;
     }

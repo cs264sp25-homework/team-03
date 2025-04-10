@@ -8,14 +8,14 @@ export type CreateTabType = {
   url: string;
   name?: string;
   content?: string;
-  groupId?: Id<"tabGroups">;
+  tabGroupId?: Id<"tabGroups">;
 };
 
 export type UpdateTabType = {
   url?: string;
   name?: string;
   content?: string;
-  groupId?: Id<"tabGroups">;
+  tabGroupId?: Id<"tabGroups">;
 };
 
 export function useMutationTabs() {
@@ -29,7 +29,7 @@ export function useMutationTabs() {
         url: tab.url,
         name: tab.name,
         content: tab.content,
-        groupId: tab.groupId
+        tabGroupId: tab.tabGroupId
       });
       return tabId;
     } catch (error) {
@@ -63,7 +63,7 @@ export function useMutationTabs() {
   };
 
   // Helper function to save a Chrome tab
-  const saveFromChrome = async (chromeTab: chrome.tabs.Tab, groupId?: Id<"tabGroups">): Promise<Id<"tabs"> | null> => {
+  const saveFromChrome = async (chromeTab: chrome.tabs.Tab, tabGroupId?: Id<"tabGroups">): Promise<Id<"tabs"> | null> => {
     if (!chromeTab.url) {
       toast("Tab URL is required");
       return null;
@@ -72,16 +72,16 @@ export function useMutationTabs() {
     return await createTab({
       url: chromeTab.url,
       name: chromeTab.title,
-      groupId
+      tabGroupId
     });
   };
 
   // Helper function to save multiple Chrome tabs
-  const saveMultipleFromChrome = async (chromeTabs: chrome.tabs.Tab[], groupId?: Id<"tabGroups">): Promise<(Id<"tabs"> | null)[]> => {
+  const saveMultipleFromChrome = async (chromeTabs: chrome.tabs.Tab[], tabGroupId?: Id<"tabGroups">): Promise<(Id<"tabs"> | null)[]> => {
     return await Promise.all(
       chromeTabs
         .filter(tab => tab.url)
-        .map(tab => saveFromChrome(tab, groupId))
+        .map(tab => saveFromChrome(tab, tabGroupId))
     );
   };
 
