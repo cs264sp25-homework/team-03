@@ -1,12 +1,12 @@
 import { createOpenAI, openai } from "@ai-sdk/openai";
 import { embedMany, streamText } from "ai";
-//import { tool } from "ai";
+import { tool } from "ai";
 import { internalAction } from "./_generated/server";
 import {  internal } from "./_generated/api";
 //import { api } from "./_generated/api";
 import { v } from "convex/values";
-
-//import { Id } from "./_generated/dataModel";
+import { z } from "zod";
+import { Id } from "./_generated/dataModel";
 
 export interface TextEmbedding {
   text: string;
@@ -135,8 +135,7 @@ export const completion = internalAction({
 
     const { textStream } = streamText({
       model: openai("gpt-4o-mini"),
-      // TODO: Implement chunks search functionality
-      /*tools: {
+      tools: {
         search: tool({
           description: "Given a query, return the most relevant information from the tabs",
           parameters: z.object({
@@ -155,7 +154,7 @@ export const completion = internalAction({
             });
           },
         }),
-      }, */
+      },
       messages: [
         {
           role: "system",
@@ -165,6 +164,37 @@ export const completion = internalAction({
       ],
       maxSteps: 10,
       temperature: 0,
+      onStepFinish: ({ 
+        text, 
+        reasoning,
+        sources,
+        toolCalls, 
+        toolResults, 
+        finishReason, 
+        usage,
+        warnings,
+        logprobs,
+        request,
+        response,
+        providerMetadata,
+        stepType,
+        isContinued,
+      }) => {
+        console.log("Text", text);
+        console.log("Tool calls:", toolCalls);
+        console.log("Tool results:", toolResults);
+        console.log("Reasoning:", reasoning);
+        console.log("Sources:", sources);
+        console.log("Finish reason:", finishReason);
+        console.log("Usage:", usage);
+        console.log("Warnings:", warnings);
+        console.log("Logprobs:", logprobs);
+        console.log("Request:", request);
+        console.log("Response:", response);
+        console.log("Provider metadata:", providerMetadata);
+        console.log("Step type:", stepType);
+        console.log("Is continued:", isContinued);
+      },
     });
 
     let fullResponse = "";

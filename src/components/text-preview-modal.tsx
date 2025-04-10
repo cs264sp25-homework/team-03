@@ -85,8 +85,8 @@ export function TextPreviewModal({
               }`}></div>
             </div>
           ) : error ? (
-            <div className="text-red-500 p-4 text-center">
-              <p className="font-medium mb-2">Failed to extract text</p>
+            <div className="p-4 text-center text-red-500">
+              <p className="mb-2 font-medium">Failed to extract text</p>
               <p className={`text-sm ${
                 isDarkMode ? 'text-muted-foreground' : 'text-gray-600'
               }`}>

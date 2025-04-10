@@ -14,6 +14,7 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as chats from "../chats.js";
+import type * as chunks from "../chunks.js";
 import type * as guards_auth from "../guards/auth.js";
 import type * as guards_ownership_guards from "../guards/ownership_guards.js";
 import type * as lib_sessions from "../lib/sessions.js";
@@ -32,6 +33,7 @@ import type * as users from "../users.js";
  */
 declare const fullApi: ApiFromModules<{
   chats: typeof chats;
+  chunks: typeof chunks;
   "guards/auth": typeof guards_auth;
   "guards/ownership_guards": typeof guards_ownership_guards;
   "lib/sessions": typeof lib_sessions;

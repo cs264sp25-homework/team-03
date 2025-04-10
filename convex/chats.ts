@@ -56,14 +56,14 @@ export const create = mutationWithSession({
   args: {
     title: v.string(),
     description: v.optional(v.string()),
-    groupId: v.optional(v.id("tabGroups")),
+    tabGroupId: v.optional(v.id("tabGroups")),
   },
   handler: async (ctx, args) => {
     const userId = await authenticationGuard(ctx, ctx.sessionId);
     
     // If groupId provided, verify it exists and belongs to user
-    if (args.groupId) {
-      const group = await ctx.db.get(args.groupId);
+    if (args.tabGroupId) {
+      const group = await ctx.db.get(args.tabGroupId);
       if (!group) throw new Error("Group not found");
       ownershipGuard(userId, group.userId);
     }
@@ -72,7 +72,7 @@ export const create = mutationWithSession({
       userId,
       title: args.title,
       description: args.description,
-      groupId: args.groupId,
+      tabGroupId: args.tabGroupId,
       messageCount: 0,
       tabCount: 0,
     });

@@ -5,6 +5,7 @@ import { FileText, RefreshCw } from "lucide-react";
 import { useMutationTabs } from "@/hooks/use-mutation-tabs";
 import { useQueryTabs } from "@/hooks/use-query-tabs";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 //import { ChromeTab } from "@/types/tab";
 
@@ -12,6 +13,8 @@ interface TabListProps {
   tabs: chrome.tabs.Tab[];
   searchQuery: string;
 }
+
+const debug = import.meta.env.VITE_NODE_ENV === "development";
 
 export function TabList({ tabs, searchQuery }: TabListProps) {
   const [selectedTab, setSelectedTab] = useState<chrome.tabs.Tab | null>(null);
@@ -95,7 +98,7 @@ export function TabList({ tabs, searchQuery }: TabListProps) {
   };
 
   return (
-    <>
+    <div className={cn(debug && "border border-red-500")}>
       <div className="flex-1 px-4 py-3 overflow-y-auto">
         <div className="space-y-3">
           {filteredTabs.map((tab) => {
@@ -127,7 +130,7 @@ export function TabList({ tabs, searchQuery }: TabListProps) {
                         {tab.url}
                       </p>
                       {savedTab && (
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           {savedTab.content ? 
                             `${savedTab.content.length.toLocaleString()} characters extracted` : 
                             'No content extracted'}
@@ -170,6 +173,6 @@ export function TabList({ tabs, searchQuery }: TabListProps) {
         isLoading={isLoading}
         error={error}
       />
-    </>
+    </div>
   );
 } 
