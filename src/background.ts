@@ -85,4 +85,54 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     })();
     return true;
   }
+
+  // Handle tab removed request
+  if (message.type === 'tabRemoved') {
+    // Call your Convex mutation to remove the tab
+    // This will run even if popup is closed
+    console.log('Tab removed:', message.tabId);
+  }
+
+  // Handle tab updated request
+  if (message.type === 'tabUpdated') {
+    // Update tab info in database
+    // This will run even if popup is closed
+    console.log('Tab updated:', message.tabId, message.url, message.title);
+  }
+});
+
+// Direct handling of tab events
+chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+  console.log('Tab removed:', tabId, 'window:', removeInfo.windowId, 'isWindowClosing:', removeInfo.isWindowClosing);
+  // Here you can directly call your Convex mutation to remove the tab from database
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete') {
+    console.log('Tab updated:', tabId, 'url:', tab.url, 'title:', tab.title);
+    // Here you can directly call your Convex mutation to update the tab in database
+  }
+});
+
+// Add context menu for text selection
+chrome.contextMenus.create({
+  id: "askAboutSelection",
+  title: "Ask about selection",
+  contexts: ["selection"]
+});
+
+// Handle context menu clicks
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === "askAboutSelection" && tab?.id) {
+    // Get the selected text
+    const selectedText = info.selectionText;
+    
+    // Send message to popup with the selected text and URL
+    chrome.runtime.sendMessage({
+      type: "selection",
+      text: selectedText,
+      url: tab.url,
+      title: tab.title
+    });
+  }
 });

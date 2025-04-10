@@ -13,9 +13,7 @@ import { useQueryUserChat } from "@/hooks/use-query-user-chat";
 import { useCreateChat } from "@/hooks/useCreateChat";
 import MessagesPage from "@/pages/messages/messages-page";
 
-//TODO:
-//app state doesn't persist when popup closed
-//initial load has error from getting all chats (auth.ts)
+
 declare global {
   interface Window {
     chrome: typeof chrome;
@@ -28,7 +26,9 @@ function App() {
   });
   const [tabs, setTabs] = useState<chrome.tabs.Tab[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showChat, setShowChat] = useState(false);
+  const [showChat, setShowChat] = useState(() => {
+    return localStorage.getItem("showChat") === "true";
+  });
   const [hasCreatedChat, setHasCreatedChat] = useState(false);
 
   const { userId } = useUser();
@@ -37,8 +37,29 @@ function App() {
     localStorage.setItem("hasStarted", hasStarted.toString());
   }, [hasStarted]);
 
+  // Update localStorage when showChat changes
+  useEffect(() => {
+    localStorage.setItem("showChat", showChat.toString());
+  }, [showChat]);
+
   const chat = useQueryUserChat();
   const { createDefaultChat } = useCreateChat();
+
+  // Handle selection data and navigation
+  useEffect(() => {
+    const handleMessage = (message: any) => {
+      console.log('App received message:', message);
+      if (message.type === "selection") {
+        console.log('App handling selection, navigating to chat');
+        setShowChat(true);
+      }
+    };
+
+    chrome.runtime.onMessage.addListener(handleMessage);
+    return () => {
+      chrome.runtime.onMessage.removeListener(handleMessage);
+    };
+  }, []);
 
   const updateTabs = useCallback(() => {
     chrome.runtime.sendMessage({type: "getTabs"}, (response) => {
@@ -77,6 +98,23 @@ function App() {
       console.error("Failed to create chat:", error);
     }
   };
+
+  
+
+  // Add logging for tab changes
+  /*useEffect(() => {
+   
+    
+    const handleTabRemoved = (tabId: number, removeInfo: chrome.tabs.TabRemoveInfo) => {
+      console.log('Tab removed in App:', tabId, removeInfo);
+    };
+
+    chrome.tabs.onRemoved.addListener(handleTabRemoved);
+    return () => {
+      chrome.tabs.onRemoved.removeListener(handleTabRemoved);
+    };
+  }, []);
+*/
 
   if (!hasStarted) {
     return <StartPage onStart={() => setHasStarted(true)} />;

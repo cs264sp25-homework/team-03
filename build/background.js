@@ -1,10 +1,60 @@
+// Store the last selection
+let lastSelection = null;
+
+// Store tab URLs
+const tabUrls = new Map();
+
+// Track tab URLs when they're updated
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete' && tab.url) {
+    console.log('Background: Tracking tab URL:', tabId, tab.url);
+    tabUrls.set(tabId, tab.url);
+  }
+});
+
+// Add tab event listeners that send messages
+chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+  console.log('Background: Tab removed:', tabId, 'window:', removeInfo.windowId);
+  
+  // Get the URL from our stored URLs
+  const url = tabUrls.get(tabId);
+  if (url) {
+    console.log('Background: Found URL for removed tab:', url);
+    // Clean up the stored URL
+    tabUrls.delete(tabId);
+  } else {
+    console.log('Background: No URL found for removed tab');
+  }
+});
+
+// Handle messages from popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log('Background received message:', message);
+
+  // Handle test message
+  if (message.type === 'test') {
+    console.log('Background: Received test message');
+    sendResponse({ success: true });
+    return true;
+  }
+
   // Handle get tabs request
   if (message.type === "getTabs") {
     chrome.tabs.query({currentWindow: true}, (tabs) => {
       sendResponse({tabs: tabs});
     });
-    return true; // Required for async response
+    return true;
+  }
+
+  // Handle get selection request
+  if (message.type === "getSelection") {
+    console.log('Popup requested selection data, sending:', lastSelection);
+    sendResponse({ 
+      selection: lastSelection,
+      action: lastSelection?.action
+    });
+    lastSelection = null;
+    return true;
   }
 
   // Handle extract text request
@@ -94,6 +144,45 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
       }
     })();
-    return true; // Required for async response
+    return true;
+  }
+});
+
+// Add context menu for text selection
+chrome.contextMenus.removeAll(() => {
+  chrome.contextMenus.create({
+    id: "askAboutSelection",
+    title: "Ask About Selection",
+    contexts: ["selection"]
+  });
+});
+
+// Handle context menu clicks
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === "askAboutSelection" && tab?.id) {
+    // Store the selection data
+    lastSelection = {
+      type: "selection",
+      text: info.selectionText,
+      url: tab.url,
+      title: tab.title,
+      action: "navigateToChat"
+    };
+    
+    console.log('Stored selection data:', lastSelection);
+    
+    // Open the popup
+    chrome.action.openPopup();
+    
+    // Send the selection message to the popup
+    setTimeout(() => {
+      console.log('Sending selection message to popup');
+      chrome.runtime.sendMessage({
+        type: "selection",
+        text: info.selectionText,
+        url: tab.url,
+        title: tab.title
+      });
+    }, 100); // Small delay to ensure popup is open
   }
 });

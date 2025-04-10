@@ -10,12 +10,42 @@ const DEBUG = false;
 
 interface MessageInputProps {
   chatId: string;
+  selectionData?: {
+    text: string;
+    url: string;
+    title: string;
+  } | null;
+  onSelectionHandled?: () => void;
 }
 
-const MessageInput: React.FC<MessageInputProps> = ({ chatId }) => {
-  const [text, setText] = useState("");
+const MessageInput: React.FC<MessageInputProps> = ({ 
+  chatId, 
+  selectionData,
+  onSelectionHandled 
+}) => {
+  // Get draft from storage or use empty string
+  const [text, setText] = useState(() => {
+    const saved = localStorage.getItem(`chat-draft-${chatId}`);
+    return saved || "";
+  });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { add: createMessage } = useMutationMessages(chatId);
+
+  // Handle selection data changes
+  useEffect(() => {
+    if (selectionData) {
+      const newText = `Based on "${selectionData.text}" from ${selectionData.title} (${selectionData.url}), can you...`;
+      setText(newText);
+      localStorage.setItem(`chat-draft-${chatId}`, newText);
+      textareaRef.current?.focus();
+      onSelectionHandled?.();
+    }
+  }, [selectionData, chatId, onSelectionHandled]);
+
+  // Save draft to storage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(`chat-draft-${chatId}`, text);
+  }, [text, chatId]);
 
   // Auto-focus textarea when component mounts
   useEffect(() => {
@@ -50,6 +80,8 @@ const MessageInput: React.FC<MessageInputProps> = ({ chatId }) => {
       content: text,
     });
     setText("");
+    // Clear the draft after sending
+    localStorage.removeItem(`chat-draft-${chatId}`);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

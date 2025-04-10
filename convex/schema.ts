@@ -67,7 +67,8 @@ export default defineSchema({
     status: tabStatuses,
   })
   .index("by_user_id", ["userId"])
-  .index("by_group_id", ["tabGroupId"]),
+  .index("by_group_id", ["tabGroupId"])
+  .index("by_user_and_url", ["userId", "url"]),
   
   
   chats: defineTable({

@@ -55,11 +55,33 @@ export const getOneInternal = internalQuery({
   },
 });
 
+export const getOneByUrl = mutationWithSession({
+  args: {
+    url: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await authenticationGuard(ctx, ctx.sessionId);
+    
+    // Find tab by URL for this user
+    const tab = await ctx.db
+      .query("tabs")
+      .withIndex("by_user_and_url", (q) => 
+        q.eq("userId", userId).eq("url", args.url)
+      )
+      .first();
+
+    if (!tab) return null;
+    
+    return tab;
+  },
+});
+
 
 export const create = mutationWithSession({
   args: {
     url: v.string(),
     name: v.optional(v.string()),
+    content: v.optional(v.string()),
     tabGroupId: v.optional(v.id("tabGroups")),
   },
   handler: async (ctx, args) => {
@@ -72,13 +94,31 @@ export const create = mutationWithSession({
       ownershipGuard(userId, group.userId);
     }
 
-    // Create the tab
+    // Check if tab already exists for this user
+    const existingTab = await ctx.db
+      .query("tabs")
+      .withIndex("by_user_and_url", (q) => 
+        q.eq("userId", userId).eq("url", args.url)
+      )
+      .first();
+
+    if (existingTab) {
+      // Update existing tab instead of creating a new one
+      await ctx.db.patch(existingTab._id, {
+        name: args.name,
+        content: args.content,
+        groupId: args.groupId
+      });
+      return existingTab._id;
+    }
+  
+    // Create new tab if it doesn't exist
     const tabId = await ctx.db.insert("tabs", {
       userId,
       tabGroupId: args.tabGroupId,
       url: args.url,
       name: args.name,
-      content: undefined,
+      content: args.content,
       error: undefined,
       status: "pending",
     });
