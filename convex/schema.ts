@@ -15,7 +15,6 @@ export const tabStatuses = v.union(
 //TODO: tabGroups not implemented yet
 
 export const chunkSchema = {
-  chatId: v.id("chats"),
   tabId: v.id("tabs"),
   text: v.string(),
   counts: v.optional(
@@ -93,8 +92,7 @@ export default defineSchema({
     .vectorIndex("by_embedding", {
       vectorField: "embedding",
       dimensions: 1536,
-      filterFields: ["chatId", "tabId"],
+      filterFields: ["tabId"],
     })
-    .index("by_chat_id", ["chatId"])
     .index("by_tab_id", ["tabId"])
 });

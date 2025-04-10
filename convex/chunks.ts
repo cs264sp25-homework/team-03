@@ -12,21 +12,27 @@ import {
   export const addChunk = internalMutation({
     args: chunkSchema,
     handler: async (ctx, args) => {
-      const chunkId = await ctx.db.insert("chunks", args);
-      console.log(chunkId);
+      const chunkId = await ctx.db.insert("chunks", {
+        tabId: args.tabId,
+        text: args.text,
+        counts: args.counts,
+        position: args.position,
+        metadata: args.metadata,
+        embedding: args.embedding,
+      });
+  
       return chunkId;
     },
   });
   
   export const search = internalAction({
     args: {
-      chatId: v.id("chats"),
-      tabIds: v.optional(v.array(v.id("tabs"))),
+      tabIds: v.array(v.id("tabs")),
       query: v.string(),
       limit: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-      const { query, limit = 5, tabIds, chatId } = args;
+      const { query, limit = 5, tabIds } = args;
   
       const embeddings = await getEmbedding([query]);
   
@@ -34,14 +40,7 @@ import {
         vector: embeddings[0].embedding,
         limit: limit,
         filter: (q) => {
-          if (!tabIds || tabIds.length === 0) {
-            return q.eq("chatId", chatId);
-          } else {
-            return q.or(
-              q.eq("chatId", chatId),
-              ...tabIds.map((id) => q.eq("tabId", id))
-            );
-          }
+          return q.or(...tabIds.map((id) => q.eq("tabId", id)));
         }
       });
   

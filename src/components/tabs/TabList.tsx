@@ -21,7 +21,7 @@ export function TabList({ tabs, searchQuery }: TabListProps) {
   const [extractedText, setExtractedText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
-  const { create } = useMutationTabs();
+  const { saveFromChrome } = useMutationTabs();
   const { findTabByUrl, isTabExtracted } = useQueryTabs();
 
   const filteredTabs = tabs.filter(tab => 
@@ -65,15 +65,8 @@ export function TabList({ tabs, searchQuery }: TabListProps) {
         throw new Error('No text extracted');
       }
 
-      // First save the tab with its content
-      const createArgs = {
-        url: tab.url,
-        name: tab.title,
-        content: response.text
-      };
-      
-      const tabId = await create(createArgs);
-
+      // Save the tab with its content
+      const tabId = await saveFromChrome(tab, undefined, response.text);
       if (!tabId) {
         toast.error("Failed to save tab to database");
       } else {

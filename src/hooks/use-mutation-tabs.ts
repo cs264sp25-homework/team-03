@@ -22,6 +22,7 @@ export function useMutationTabs() {
   const createMutation = useSessionMutation(api.tabs.create);
   const updateMutation = useSessionMutation(api.tabs.update);
   const removeMutation = useSessionMutation(api.tabs.remove);
+  const getOneByUrlMutation = useSessionMutation(api.tabs.getOneByUrl);
 
   const createTab = async (tab: CreateTabType): Promise<Id<"tabs"> | null> => {
     try {
@@ -63,16 +64,31 @@ export function useMutationTabs() {
   };
 
   // Helper function to save a Chrome tab
-  const saveFromChrome = async (chromeTab: chrome.tabs.Tab, tabGroupId?: Id<"tabGroups">): Promise<Id<"tabs"> | null> => {
+  const saveFromChrome = async (chromeTab: chrome.tabs.Tab, tabGroupId?: Id<"tabGroups">, content?: string): Promise<Id<"tabs"> | null> => {
     if (!chromeTab.url) {
       toast("Tab URL is required");
       return null;
     }
+
+    // First check if tab exists
+    const existingTab = await getOneByUrlMutation({ url: chromeTab.url });
     
+    if (existingTab) {
+      // Update existing tab
+      const success = await updateTab(existingTab._id, {
+        name: chromeTab.title,
+        tabGroupId,
+        content
+      });
+      return success ? existingTab._id : null;
+    }
+    
+    // Create new tab if it doesn't exist
     return await createTab({
       url: chromeTab.url,
       name: chromeTab.title,
-      tabGroupId
+      tabGroupId,
+      content
     });
   };
 

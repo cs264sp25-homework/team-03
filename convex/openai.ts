@@ -149,8 +149,7 @@ export const completion = internalAction({
             });
             return ctx.runAction(internal.chunks.search, {
               query,
-              tabIds: tabIds?.map((id) => id as Id<"tabs">),
-              chatId: args.chatId,
+              tabIds: tabIds?.map((id) => id as Id<"tabs">) ?? [],
             });
           },
         }),

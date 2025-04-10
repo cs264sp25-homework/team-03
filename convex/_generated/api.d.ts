@@ -22,6 +22,7 @@ import type * as messages from "../messages.js";
 import type * as openai from "../openai.js";
 import type * as tabs from "../tabs.js";
 import type * as users from "../users.js";
+import type * as vectorize from "../vectorize.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   openai: typeof openai;
   tabs: typeof tabs;
   users: typeof users;
+  vectorize: typeof vectorize;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,
