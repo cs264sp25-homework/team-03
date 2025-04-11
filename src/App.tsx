@@ -153,17 +153,19 @@ function App() {
         </div>
         
         {!showChat ? (
-          <>
+          <div className="flex flex-col h-full relative">
             <TabSearch 
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
             />
-            <TabList 
-              tabs={filteredTabs}
-              searchQuery={searchQuery}
-              showOnlyFavorites={activeView === 'favorites'}
-            />
-          </>
+            <div className="flex-1 overflow-y-auto">
+              <TabList 
+                tabs={filteredTabs}
+                searchQuery={searchQuery}
+                showOnlyFavorites={activeView === 'favorites'}
+              />
+            </div>
+          </div>
         ) : userId ? (
           chat ? (
             <MessagesPage chatId={chat._id} />

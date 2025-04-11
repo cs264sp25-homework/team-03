@@ -104,7 +104,7 @@ export function TabList({ tabs, searchQuery, showOnlyFavorites = false }: TabLis
 
   return (
     <div className={cn(debug && "border border-red-500")}>
-      <div className="flex-1 px-4 py-3 overflow-y-auto">
+      <div className="px-4 py-3">
         <div className="space-y-3">
           {filteredTabs.map((tab) => {
             const isExtracted = tab.url ? isTabExtracted(tab.url) : false;
@@ -189,7 +189,7 @@ export function TabList({ tabs, searchQuery, showOnlyFavorites = false }: TabLis
           
           {filteredTabs.length === 0 && (
             <div className="py-8 text-center text-muted-foreground">
-              {searchQuery ? "No matching tabs found" : "No open tabs"}
+              {searchQuery ? "No matching tabs found" : "No favorite tabs"}
             </div>
           )}
         </div>
