@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TextPreviewModal } from "@/components/text-preview-modal";
-import { FileText, RefreshCw } from "lucide-react";
+import { FileText, RefreshCw, Star } from "lucide-react";
 import { useMutationTabs } from "@/hooks/use-mutation-tabs";
 import { useQueryTabs } from "@/hooks/use-query-tabs";
+import { useFavorites } from "@/hooks/useFavorites";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -12,22 +13,33 @@ import { cn } from "@/lib/utils";
 interface TabListProps {
   tabs: chrome.tabs.Tab[];
   searchQuery: string;
+  showOnlyFavorites?: boolean;
 }
 
 const debug = import.meta.env.VITE_NODE_ENV === "development";
 
-export function TabList({ tabs, searchQuery }: TabListProps) {
+export function TabList({ tabs, searchQuery, showOnlyFavorites = false }: TabListProps) {
   const [selectedTab, setSelectedTab] = useState<chrome.tabs.Tab | null>(null);
   const [extractedText, setExtractedText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
   const { saveFromChrome } = useMutationTabs();
   const { findTabByUrl, isTabExtracted } = useQueryTabs();
+  const { addFavorite, removeFavorite, isFavorite, isLoading: favoritesLoading } = useFavorites();
 
-  const filteredTabs = tabs.filter(tab => 
-    tab.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    tab.url?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTabs = tabs.filter(tab => {
+    // First filter by search query
+    const matchesSearch = 
+      tab.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tab.url?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Then filter by favorites if needed
+    if (showOnlyFavorites) {
+      return matchesSearch && tab.id && isFavorite(tab.id);
+    }
+    
+    return matchesSearch;
+  });
 
   const handleExtractText = async (tab: chrome.tabs.Tab) => {
     if (!tab.url || !tab.id) return;
@@ -92,7 +104,7 @@ export function TabList({ tabs, searchQuery }: TabListProps) {
 
   return (
     <div className={cn(debug && "border border-red-500")}>
-      <div className="flex-1 px-4 py-3 overflow-y-auto">
+      <div className="px-4 py-3">
         <div className="space-y-3">
           {filteredTabs.map((tab) => {
             const isExtracted = tab.url ? isTabExtracted(tab.url) : false;
@@ -132,27 +144,52 @@ export function TabList({ tabs, searchQuery }: TabListProps) {
                     </div>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-shrink-0"
-                  onClick={() => handleExtractText(tab)}
-                  disabled={isLoading}
-                >
-                  {isExtracted ? (
-                    <RefreshCw className="w-4 h-4 mr-1" />
-                  ) : (
-                    <FileText className="w-4 h-4 mr-1" />
-                  )}
-                  {isLoading ? "Extracting..." : isExtracted ? "Re-extract" : "Extract Text"}
-                </Button>
+                <div className="flex flex-shrink-0 gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex-shrink-0"
+                    onClick={async () => {
+                      if (tab.id) {
+                        if (isFavorite(tab.id)) {
+                          const success = await removeFavorite(tab.id);
+                          if (success) {
+                            toast.success("Removed from favorites");
+                          }
+                        } else {
+                          const success = await addFavorite(tab);
+                          if (success) {
+                            toast.success("Added to favorites");
+                          }
+                        }
+                      }
+                    }}
+                  >
+                    <Star className={`w-4 h-4 ${tab.id && isFavorite(tab.id) ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex-shrink-0"
+                    onClick={() => handleExtractText(tab)}
+                    disabled={isLoading}
+                  >
+                    {isExtracted ? (
+                      <RefreshCw className="w-4 h-4 mr-1" />
+                    ) : (
+                      <FileText className="w-4 h-4 mr-1" />
+                    )}
+                    {isLoading ? "Extracting..." : isExtracted ? "Re-extract" : "Extract Text"}
+                  </Button>
+                </div>
               </div>
             );
           })}
           
           {filteredTabs.length === 0 && (
             <div className="py-8 text-center text-muted-foreground">
-              {searchQuery ? "No matching tabs found" : "No open tabs"}
+              {searchQuery ? "No matching tabs found" : "No favorite tabs"}
             </div>
           )}
         </div>

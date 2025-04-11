@@ -30,6 +30,9 @@ function App() {
     return localStorage.getItem("showChat") === "true";
   });
   const [hasCreatedChat, setHasCreatedChat] = useState(false);
+  
+  // Get the active view from MainLayout via URL parameter
+  const [activeView, setActiveView] = useState<'all' | 'favorites' | 'collections'>('all');
 
   const { userId } = useUser();
 
@@ -41,6 +44,11 @@ function App() {
   useEffect(() => {
     localStorage.setItem("showChat", showChat.toString());
   }, [showChat]);
+  
+  // Update localStorage when activeView changes
+  useEffect(() => {
+    localStorage.setItem("activeView", activeView);
+  }, [activeView]);
 
   const chat = useQueryUserChat();
   const { createDefaultChat } = useCreateChat();
@@ -121,7 +129,7 @@ function App() {
   }
 
   return (
-    <MainLayout>
+    <MainLayout activeView={activeView} onViewChange={setActiveView}>
       <div className="flex flex-col w-full h-full">
         <div className="flex border-b">
           <button
@@ -145,16 +153,19 @@ function App() {
         </div>
         
         {!showChat ? (
-          <>
+          <div className="flex flex-col h-full relative">
             <TabSearch 
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
             />
-            <TabList 
-              tabs={filteredTabs}
-              searchQuery={searchQuery}
-            />
-          </>
+            <div className="flex-1 overflow-y-auto">
+              <TabList 
+                tabs={filteredTabs}
+                searchQuery={searchQuery}
+                showOnlyFavorites={activeView === 'favorites'}
+              />
+            </div>
+          </div>
         ) : userId ? (
           chat ? (
             <MessagesPage chatId={chat._id} />

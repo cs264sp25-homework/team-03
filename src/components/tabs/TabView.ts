@@ -1,1 +1,0 @@
-export type TabViewType = 'all' | 'favorites' | 'collections'; 

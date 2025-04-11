@@ -6,10 +6,12 @@ import { SidebarNavItem } from "./sidebar-nav-item";
 import { Bookmark, FolderOpen, Settings, Star } from "lucide-react";
 import { TopBar } from "./top-bar";
 import { NODE_ENV } from "@/env";
-import { TabViewType } from "@/components/tabs/TabView";
+import { TabViewType } from "@/types/tabs";
 
 interface MainLayoutProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
+  activeView: TabViewType;
+  onViewChange: (view: TabViewType) => void;
 }
 
 const debug = NODE_ENV === "development";
@@ -18,11 +20,10 @@ chrome.windows.getCurrent({ populate: true }, (window) => {
   console.log("accurate window height", window.height, 'width', window.width);
 });
 
-export function MainLayout({ children, className, ...props }: MainLayoutProps) {
-  const [activeView, setActiveView] = useState<TabViewType>('all');
-  
+export function MainLayout({ children, className, activeView, onViewChange, ...props }: MainLayoutProps) {
+  // Use the activeView and onViewChange props from App.tsx
   const handleViewChange = (view: TabViewType) => {
-    setActiveView(view);
+    onViewChange(view);
   };
   
   return (

@@ -47,6 +47,18 @@ export default defineSchema({
     // https://stack.convex.dev/track-sessions-without-cookies
     sessionId: vSessionId,
   }).index("by_sessionId", ["sessionId"]),
+  
+  // Favorites table to store user's favorite tabs
+  favorites: defineTable({
+    userId: v.id("users"),  // Each favorite belongs to a user
+    tabId: v.number(),      // Chrome tab ID
+    url: v.string(),        // Tab URL
+    title: v.string(),      // Tab title
+    favIconUrl: v.optional(v.string()), // Tab favicon URL
+  })
+  .index("by_user_id", ["userId"])
+  .index("by_user_and_tab_id", ["userId", "tabId"])
+  .index("by_user_and_url", ["userId", "url"]),
 
   tabGroups: defineTable({
     userId: v.id("users"),  // Each tab group belongs to a user

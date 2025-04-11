@@ -11,6 +11,8 @@
     },
     "action": {
       "default_popup": "index.html",
+      "default_width": 800,
+      "default_height": 600,
       "default_icon": {
         "16": "tabAssistLogo.png",
         "32": "tabAssistLogo.png",
