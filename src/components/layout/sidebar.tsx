@@ -10,7 +10,7 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function Sidebar({
   children,
-  defaultCollapsed = false,
+  defaultCollapsed = true,
   className,
   ...props
 }: SidebarProps) {
@@ -19,8 +19,8 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "group/sidebar relative flex h-screen flex-col overflow-hidden border-r bg-background px-3 pb-3 pt-2 transition-all duration-300",
-        isCollapsed ? "w-[50px]" : "w-[180px]",
+        "group/sidebar relative flex h-screen flex-col overflow-hidden border-r bg-background px-3 pb-3 pt-3 transition-all duration-300 shadow-sm",
+        isCollapsed ? "w-[60px]" : "w-[200px]",
         className
       )}
       {...props}
@@ -32,12 +32,12 @@ export function Sidebar({
             isCollapsed && "opacity-0"
           )}
         >
-          {!isCollapsed && <span className="text-lg font-semibold">Tabs</span>}
+          {!isCollapsed && <span className="text-lg font-semibold text-primary">TabAssist</span>}
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="w-6 h-6"
+          className="w-7 h-7 rounded-full hover:bg-muted/80"
           onClick={() => setIsCollapsed(!isCollapsed)}
         >
           {isCollapsed ? (

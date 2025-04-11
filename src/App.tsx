@@ -30,8 +30,7 @@ function App() {
     return localStorage.getItem("showChat") === "true";
   });
   const [hasCreatedChat, setHasCreatedChat] = useState(false);
-  
-  // Get the active view from MainLayout via URL parameter
+
   const [activeView, setActiveView] = useState<'all' | 'favorites' | 'collections'>('all');
 
   const { userId } = useUser();
@@ -131,26 +130,6 @@ function App() {
   return (
     <MainLayout activeView={activeView} onViewChange={setActiveView}>
       <div className="flex flex-col w-full h-full">
-        <div className="flex border-b">
-          <button
-            className={`flex-1 p-3 flex items-center justify-center gap-2 ${
-              !showChat ? 'bg-muted' : ''
-            }`}
-            onClick={() => setShowChat(false)}
-          >
-            <FileText className="w-4 h-4" />
-            <span>Tabs</span>
-          </button>
-          <button
-            className={`flex-1 p-3 flex items-center justify-center gap-2 ${
-              showChat ? 'bg-muted' : ''
-            }`}
-            onClick={() => setShowChat(true)}
-          >
-            <MessageSquare className="w-4 h-4" />
-            <span>Chat</span>
-          </button>
-        </div>
         
         {!showChat ? (
           <div className="flex flex-col h-full relative">

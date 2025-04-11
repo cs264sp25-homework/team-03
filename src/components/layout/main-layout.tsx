@@ -29,7 +29,7 @@ export function MainLayout({ children, className, activeView, onViewChange, ...p
   return (
     <div 
       className={cn(
-        "flex max-h-screen max-w-screen overflow-hidden",
+        "flex max-h-screen max-w-screen overflow-hidden bg-gradient-to-br from-background to-muted/30",
         debug && "border-2 border-red-500",
         className
       )}
@@ -60,9 +60,9 @@ export function MainLayout({ children, className, activeView, onViewChange, ...p
         />
       </Sidebar>
       <div className="flex flex-col flex-1 min-w-0">
-        <TopBar />
+        <TopBar showChat={localStorage.getItem("showChat") === "true"} />
         <main
-          className={cn("flex-1 overflow-y-auto p-4", className)}
+          className={cn("flex-1 overflow-y-auto p-6", className)}
           {...props}
         >
           {children}
