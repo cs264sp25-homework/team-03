@@ -25,19 +25,15 @@ export function TextPreviewModal({
   isLoading,
   error
 }: TextPreviewModalProps) {
-  // Use the same theme hook as the rest of the application
   const { theme } = useTheme();
   const [isDarkMode, setIsDarkMode] = useState(false);
   
-  // Force theme check whenever the modal is opened
   useEffect(() => {
     if (isOpen) {
-      // Check all possible theme indicators
       const storedTheme = localStorage.getItem('theme');
       const hasDarkClass = document.documentElement.classList.contains('dark');
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       
-      // Determine theme based on all available signals
       if (storedTheme === 'dark' || (storedTheme === 'system' && prefersDark) || (!storedTheme && hasDarkClass)) {
         setIsDarkMode(true);
       } else {
@@ -46,21 +42,17 @@ export function TextPreviewModal({
     }
   }, [isOpen]);
   
-  // Update isDarkMode whenever the theme changes
   useEffect(() => {
-    // Determine if we should use dark mode based on the current theme
     if (theme === 'dark') {
       setIsDarkMode(true);
     } else if (theme === 'light') {
       setIsDarkMode(false);
     } else if (theme === 'system') {
-      // Check system preference
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       setIsDarkMode(prefersDark);
     }
   }, [theme]);
   
-  // Also listen for system preference changes when in system mode
   useEffect(() => {
     if (theme !== 'system') return;
     
