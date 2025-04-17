@@ -6,6 +6,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { useEffect, useState } from "react";
+import { useTheme } from "@/hooks/use-theme";
 
 interface TextPreviewModalProps {
   isOpen: boolean;
@@ -24,35 +25,54 @@ export function TextPreviewModal({
   isLoading,
   error
 }: TextPreviewModalProps) {
+  // Use the same theme hook as the rest of the application
+  const { theme } = useTheme();
   const [isDarkMode, setIsDarkMode] = useState(false);
   
-  // Detect theme changes
+  // Force theme check whenever the modal is opened
   useEffect(() => {
-    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDarkMode(darkModeMediaQuery.matches || document.documentElement.classList.contains('dark'));
+    if (isOpen) {
+      // Check all possible theme indicators
+      const storedTheme = localStorage.getItem('theme');
+      const hasDarkClass = document.documentElement.classList.contains('dark');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      
+      // Determine theme based on all available signals
+      if (storedTheme === 'dark' || (storedTheme === 'system' && prefersDark) || (!storedTheme && hasDarkClass)) {
+        setIsDarkMode(true);
+      } else {
+        setIsDarkMode(false);
+      }
+    }
+  }, [isOpen]);
+  
+  // Update isDarkMode whenever the theme changes
+  useEffect(() => {
+    // Determine if we should use dark mode based on the current theme
+    if (theme === 'dark') {
+      setIsDarkMode(true);
+    } else if (theme === 'light') {
+      setIsDarkMode(false);
+    } else if (theme === 'system') {
+      // Check system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setIsDarkMode(prefersDark);
+    }
+  }, [theme]);
+  
+  // Also listen for system preference changes when in system mode
+  useEffect(() => {
+    if (theme !== 'system') return;
+    
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     
     const handleChange = (e: MediaQueryListEvent) => {
-      setIsDarkMode(e.matches || document.documentElement.classList.contains('dark'));
+      setIsDarkMode(e.matches);
     };
     
-    darkModeMediaQuery.addEventListener('change', handleChange);
-    return () => darkModeMediaQuery.removeEventListener('change', handleChange);
-  }, []);
-  
-  // Also check for HTML class changes (for manual theme toggles)
-  useEffect(() => {
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.attributeName === 'class') {
-          const htmlElement = mutation.target as HTMLElement;
-          setIsDarkMode(htmlElement.classList.contains('dark'));
-        }
-      });
-    });
-    
-    observer.observe(document.documentElement, { attributes: true });
-    return () => observer.disconnect();
-  }, []);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, [theme]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -85,13 +105,29 @@ export function TextPreviewModal({
               }`}></div>
             </div>
           ) : error ? (
-            <div className="p-4 text-center text-red-500">
-              <p className="mb-2 font-medium">Failed to extract text</p>
-              <p className={`text-sm ${
-                isDarkMode ? 'text-muted-foreground' : 'text-gray-600'
-              }`}>
-                {error}
-              </p>
+            <div className="p-4 text-center">
+              <p className="mb-2 font-medium text-red-500">Failed to extract text</p>
+              {error.includes('Cannot access restricted Chrome') ? (
+                <div>
+                  <p className={`text-sm ${
+                    isDarkMode ? 'text-muted-foreground' : 'text-gray-600'
+                  }`}>
+                    {error}
+                  </p>
+                  <p className={`mt-2 text-sm ${
+                    isDarkMode ? 'text-muted-foreground' : 'text-gray-600'
+                  }`}>
+                    Chrome doesn't allow extensions to access internal Chrome pages for security reasons.
+                    Try extracting text from regular web pages instead.
+                  </p>
+                </div>
+              ) : (
+                <p className={`text-sm ${
+                  isDarkMode ? 'text-muted-foreground' : 'text-gray-600'
+                }`}>
+                  {error}
+                </p>
+              )}
             </div>
           ) : (
             <div className={`whitespace-pre-wrap text-sm font-medium ${

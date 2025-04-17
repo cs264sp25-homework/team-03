@@ -49,6 +49,13 @@ export function TabList({ tabs, searchQuery, showOnlyFavorites = false }: TabLis
     setError(undefined);
     setExtractedText("");
 
+    // Check for restricted URLs (chrome://, chrome-extension://, etc.)
+    if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('devtools://')) {
+      setIsLoading(false);
+      setError(`Cannot access restricted Chrome URLs (${tab.url.split('/')[0]}//)`); 
+      return;
+    }
+
     try {
       interface ExtractTextResponse {
         success: boolean;
@@ -113,29 +120,33 @@ export function TabList({ tabs, searchQuery, showOnlyFavorites = false }: TabLis
             return (
               <div
                 key={tab.id}
-                className="flex items-start gap-3 p-3 transition-colors border border-gray-600 rounded-lg dark:border-gray-700 bg-background hover:bg-muted"
+                className="flex items-start gap-3 p-4 transition-all duration-200 border border-gray-200 dark:border-gray-800 rounded-xl bg-background hover:bg-muted/50 shadow-sm hover:shadow-md"
               >
                 <div 
-                  className="flex-1 min-w-0 cursor-pointer"
+                  className="flex-1 min-w-0 cursor-pointer group"
                   onClick={() => chrome.tabs.update(tab.id!, { active: true })}
                 >
                   <div className="flex items-start gap-3">
-                    {tab.favIconUrl && (
+                    {tab.favIconUrl ? (
                       <img
                         src={tab.favIconUrl}
                         alt=""
-                        className="flex-shrink-0 w-4 h-4 mt-1"
+                        className="flex-shrink-0 w-5 h-5 mt-1 rounded-sm shadow-sm"
                       />
+                    ) : (
+                      <div className="flex-shrink-0 w-5 h-5 mt-1 bg-primary/10 rounded-sm flex items-center justify-center">
+                        <FileText className="w-3 h-3 text-primary" />
+                      </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium truncate text-foreground">
+                      <h3 className="text-sm font-medium truncate text-foreground group-hover:text-primary transition-colors">
                         {tab.title}
                       </h3>
-                      <p className="text-xs truncate text-muted-foreground">
+                      <p className="text-xs truncate text-muted-foreground mt-0.5">
                         {tab.url}
                       </p>
                       {savedTab && (
-                        <p className="mt-1 text-xs text-muted-foreground">
+                        <p className="mt-1.5 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full inline-block">
                           {savedTab.content ? 
                             `${savedTab.content.length.toLocaleString()} characters extracted` : 
                             'No content extracted'}
@@ -144,11 +155,11 @@ export function TabList({ tabs, searchQuery, showOnlyFavorites = false }: TabLis
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-shrink-0 gap-2">
+                <div className="flex flex-shrink-0 gap-2 items-start mt-1">
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="flex-shrink-0"
+                    className={`flex-shrink-0 rounded-full transition-colors ${tab.id && isFavorite(tab.id) ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'hover:bg-yellow-100 dark:hover:bg-yellow-900/30'}`}
                     onClick={async () => {
                       if (tab.id) {
                         if (isFavorite(tab.id)) {
@@ -165,22 +176,23 @@ export function TabList({ tabs, searchQuery, showOnlyFavorites = false }: TabLis
                       }
                     }}
                   >
-                    <Star className={`w-4 h-4 ${tab.id && isFavorite(tab.id) ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                    <Star className={`w-4 h-4 ${tab.id && isFavorite(tab.id) ? 'fill-yellow-400 text-yellow-400' : 'hover:text-yellow-600 dark:hover:text-yellow-400'}`} />
                   </Button>
                   
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="flex-shrink-0"
+                    className={`flex-shrink-0 rounded-full transition-colors ${isExtracted ? 'bg-primary/10' : 'hover:bg-primary/10'}`}
                     onClick={() => handleExtractText(tab)}
                     disabled={isLoading}
                   >
                     {isExtracted ? (
-                      <RefreshCw className="w-4 h-4 mr-1" />
+                      <RefreshCw className="w-4 h-4 mr-1 text-primary" />
                     ) : (
-                      <FileText className="w-4 h-4 mr-1" />
+                      <FileText className="w-4 h-4 mr-1 text-primary" />
                     )}
-                    {isLoading ? "Extracting..." : isExtracted ? "Re-extract" : "Extract Text"}
+                    <span className="text-xs font-medium">
+                      {isLoading ? "Extracting..." : isExtracted ? "Re-extract" : "Extract Text"}</span>
                   </Button>
                 </div>
               </div>
