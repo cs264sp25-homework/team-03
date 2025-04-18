@@ -16,7 +16,7 @@ export interface TextChunk {
     start: number; // start index of the chunk
     end: number; // end index of the chunk (inclusive)
   };
-  metadata?: Record<string, any>; // metadata about the original text
+  metadata?: Record<string, string | number>; // metadata about the original text
 }
 
 
@@ -28,7 +28,7 @@ function createChunks(
   text: string,
   chunkSize = 120,
   overlap = 20,
-  metadata: Record<string, any> = {},
+  metadata: Record<string, string | number> = {},
 ): TextChunk[] {
   const chunks: TextChunk[] = [];
   const words = text.split(/\s+/);
@@ -66,24 +66,50 @@ export const process = internalAction({
     text: v.string(),
   },
   handler: async (ctx, args) => {
-   // console.log("Starting vectorization for tab", args.tabId);
-    
-    const chunks = createChunks(args.text);
-    //console.log("Created", chunks.length, "chunks");
-
-    const embeddings = await getEmbedding(chunks.map(chunk => chunk.text));
-    //console.log("Got embeddings for chunks");
-
-    for (let i = 0; i < chunks.length; i++) {
-      const chunkId = await ctx.runMutation(internal.chunks.addChunk, {
+    try {
+      // Delete any chunks and embeddings for this tab
+      await ctx.runMutation(internal.chunks.deleteChunksByTabId, {
         tabId: args.tabId,
-        text: chunks[i].text,
-        counts: chunks[i].counts,
-        position: chunks[i].position,
-        metadata: chunks[i].metadata,
-        embedding: embeddings[i].embedding,
       });
-     // console.log("Added chunk", chunkId);
+
+      // Create chunks
+      await ctx.runMutation(api.tabs.updateTabStatus, {
+        tabId: args.tabId,
+        status: "chunking",
+      });
+      const chunks = createChunks(args.text);
+      if (chunks.length === 0) {
+        throw new Error("No valid chunks created from text");
+      }
+
+      // Generate embeddings
+      await ctx.runMutation(api.tabs.updateTabStatus, {
+        tabId: args.tabId,
+        status: "embedding",
+      });
+      const embeddings = await getEmbedding(chunks.map(chunk => chunk.text));
+
+      // Store chunks with embeddings
+      for (let i = 0; i < chunks.length; i++) {
+        await ctx.runMutation(internal.chunks.addChunk, {
+          tabId: args.tabId,
+          ...chunks[i],
+          embedding: embeddings[i].embedding,
+        });
+      }
+
+      // Set status to processed
+      await ctx.runMutation(api.tabs.updateTabStatus, {
+        tabId: args.tabId,
+        status: "processed",
+      });
+    } catch (error) {
+      console.error("Failed to process tab content:", error);
+      await ctx.runMutation(api.tabs.updateTabStatus, {
+        tabId: args.tabId,
+        status: "failed",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
     }
   },
 });
