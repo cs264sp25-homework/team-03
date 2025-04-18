@@ -1,12 +1,8 @@
-/* View logs in chrome extensions console */
 
-// Store the last selection
 let lastSelection = null;
 
-// Store tab URLs
 const tabUrls = new Map();
 
-// Track tab URLs when they're updated
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === "complete" && tab.url) {
     console.log("Background: Tracking tab URL:", tabId, tab.url);
@@ -14,7 +10,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
-// Add tab event listeners that send messages
 chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
   console.log(
     "Background: Tab removed:",
@@ -23,29 +18,24 @@ chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
     removeInfo.windowId
   );
 
-  // Get the URL from our stored URLs
   const url = tabUrls.get(tabId);
   if (url) {
     console.log("Background: Found URL for removed tab:", url);
-    // Clean up the stored URL
     tabUrls.delete(tabId);
   } else {
     console.log("Background: No URL found for removed tab");
   }
 });
 
-// Handle messages from popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("Background received message:", message);
 
-  // Handle test message
   if (message.type === "test") {
     console.log("Background: Received test message");
     sendResponse({ success: true });
     return true;
   }
 
-  // Handle get tabs request
   if (message.type === "getTabs") {
     chrome.tabs.query({ currentWindow: true }, (tabs) => {
       sendResponse({ tabs: tabs });
@@ -53,7 +43,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  // Handle get selection request
   if (message.type === "getSelection") {
     console.log("Popup requested selection data, sending:", lastSelection);
     sendResponse({
@@ -64,49 +53,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  // Handle extract text request
   if (message.type === "extractText" && message.tabId) {
     (async () => {
       try {
-        // Execute content extraction with proper permissions
         const results = await chrome.scripting.executeScript({
           target: { tabId: message.tabId },
-          world: "MAIN", // Execute in the main world to access page content
+          world: "MAIN",
           func: () => {
             try {
-              // Create a clean document clone
               const documentClone = document.cloneNode(true);
-
-              // Use DOMParser to create a new document
               const parser = new DOMParser();
               const doc = parser.parseFromString(
                 documentClone.documentElement.outerHTML,
                 "text/html"
               );
 
-              // Basic content extraction logic
-              // Remove unwanted elements
               const elementsToRemove = [
-                "script",
-                "style",
-                "iframe",
-                "nav",
-                "footer",
-                "header",
-                "aside",
-                '[role="banner"]',
-                '[role="navigation"]',
-                '[role="complementary"]',
-                '[id*="banner"]',
-                '[id*="nav"]',
-                '[id*="menu"]',
-                '[id*="header"]',
-                '[id*="footer"]',
-                '[class*="banner"]',
-                '[class*="nav"]',
-                '[class*="menu"]',
-                '[class*="header"]',
-                '[class*="footer"]',
+                'script', 'style', 'iframe', 'noscript',
+                'nav', 'footer', 'header', 'aside',
+                '[role="banner"]', '[role="navigation"]', '[role="complementary"]', '[role="alert"]',
+                '[id*="banner"]', '[id*="nav"]', '[id*="menu"]', '[id*="header"]', '[id*="footer"]',
+                '[class*="banner"]', '[class*="nav"]', '[class*="menu"]', '[class*="header"]', 
+                '[class*="footer"]', '[class*="flash"]', '[class*="alert"]', '[class*="error"]'
               ];
 
               elementsToRemove.forEach((selector) => {
@@ -117,19 +85,89 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 });
               });
 
-              // Find main content
-              let mainContent =
-                doc.querySelector("main") ||
+              const mainContent = doc.querySelector("main") ||
                 doc.querySelector("article") ||
                 doc.querySelector('[role="main"]') ||
                 doc.querySelector("#content") ||
                 doc.querySelector(".content") ||
                 doc.body;
-
-              // Extract text
-              const text =
-                mainContent.textContent || mainContent.innerText || "";
-              const cleanText = text.replace(/\s+/g, " ").trim();
+              
+              const tables = Array.from(mainContent.querySelectorAll('table'));
+              const tableData = tables.map(table => {
+                const caption = table.querySelector('caption')?.textContent?.trim() || '';
+                const headerRow = table.querySelector('thead tr');
+                
+                const rawHeaders = headerRow ? 
+                  Array.from(headerRow.querySelectorAll('th')).map(th => th.textContent?.trim() || '') :
+                  Array.from(table.querySelectorAll('tr:first-child th, tr:first-child td')).map(cell => cell.textContent?.trim() || '');
+                
+                const rawRows = Array.from(table.querySelectorAll('tbody tr, tr'))
+                  .filter(row => row !== headerRow)
+                  .map(row => Array.from(row.querySelectorAll('td')).map(td => td.textContent?.trim() || ''));
+                
+                const columnsToRemove = rawHeaders.map((header, index) => {
+                  const isEmptyColumn = header === '' || header === 'Wappen';
+                  const hasEmptyData = rawRows.every(row => !row[index] || row[index] === '');
+                  return (isEmptyColumn || hasEmptyData) ? index : -1;
+                }).filter(index => index !== -1);
+                
+                const headers = rawHeaders.filter((_, i) => !columnsToRemove.includes(i));
+                const rows = rawRows.map(row => row.filter((_, i) => !columnsToRemove.includes(i)));
+                
+                return { caption, headers, rows };
+              });
+              
+              const contentSelectors = 'h1, h2, h3, h4, h5, h6, p, li';
+              const allElements = Array.from(mainContent.querySelectorAll(contentSelectors));
+              
+              allElements.sort((a, b) => {
+                const position = a.compareDocumentPosition(b);
+                return (position & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 
+                       (position & Node.DOCUMENT_POSITION_PRECEDING) ? 1 : 0;
+              });
+              
+              let formattedContent = '';
+              let tableIndex = 0;
+              
+              const insertTable = (table) => {
+                formattedContent += '\n<TABLE-CAPTION>' + (table.caption || '') + '</TABLE-CAPTION>\n';
+                
+                formattedContent += '<TABLE>\n<TABLE-DATA>' + 
+                  JSON.stringify({ headers: table.headers, rows: table.rows }) + 
+                  '</TABLE-DATA>\n</TABLE>\n\n';
+              };
+              
+              allElements.forEach(element => {
+                const tagName = element.tagName.toLowerCase();
+                const text = element.textContent.trim();
+                if (!text) return;
+                
+                if (tagName.match(/^h[1-6]$/) || tagName === 'p') {
+                  while (tableIndex < tables.length && 
+                         (tables[tableIndex].compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING)) {
+                    insertTable(tableData[tableIndex++]);
+                  }
+                }
+                if (tagName.match(/^h[1-6]$/) || tagName === 'p') {
+                  formattedContent += text + '\n\n';
+                } else if (tagName === 'li') {
+                  formattedContent += '• ' + text + '\n';
+                }
+              });
+              
+              while (tableIndex < tables.length) {
+                insertTable(tableData[tableIndex++]);
+              }
+              
+              let cleanText = formattedContent.trim();
+              
+              if (cleanText.length < 200) {
+                cleanText = mainContent.textContent?.replace(/\s+/g, " ")
+                  .replace(/\. /g, ".\n")
+                  .replace(/\: /g, ":\n")
+                  .replace(/\n+/g, '\n\n')
+                  .trim() || "";
+              }
 
               return {
                 title: document.title,
@@ -141,7 +179,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             } catch (error) {
               console.error("Error in extraction:", error);
 
-              // Fallback to basic extraction
               const text =
                 document.body.textContent || document.body.innerText || "";
               return {
@@ -178,7 +215,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// Add context menu for text selection
 chrome.contextMenus.removeAll(() => {
   chrome.contextMenus.create({
     id: "askAboutSelection",
@@ -187,10 +223,8 @@ chrome.contextMenus.removeAll(() => {
   });
 });
 
-// Handle context menu clicks
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "askAboutSelection" && tab?.id) {
-    // Store the selection data
     lastSelection = {
       type: "selection",
       text: info.selectionText,
@@ -201,10 +235,8 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
     console.log("Stored selection data:", lastSelection);
 
-    // Open the popup
     chrome.action.openPopup();
 
-    // Send the selection message to the popup
     setTimeout(() => {
       console.log("Sending selection message to popup");
       chrome.runtime.sendMessage({
@@ -213,6 +245,6 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
         url: tab.url,
         title: tab.title,
       });
-    }, 100); // Small delay to ensure popup is open
+    }, 100); 
   }
 });

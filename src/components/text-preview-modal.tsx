@@ -29,42 +29,30 @@ export function TextPreviewModal({
   const [isDarkMode, setIsDarkMode] = useState(false);
   
   useEffect(() => {
-    if (isOpen) {
+    const updateDarkMode = () => {
       const storedTheme = localStorage.getItem('theme');
-      const hasDarkClass = document.documentElement.classList.contains('dark');
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const hasDarkClass = document.documentElement.classList.contains('dark');
       
-      if (storedTheme === 'dark' || (storedTheme === 'system' && prefersDark) || (!storedTheme && hasDarkClass)) {
+      if (theme === 'dark' || 
+          (theme === 'system' && prefersDark) || 
+          (isOpen && storedTheme === 'dark') || 
+          (isOpen && storedTheme === 'system' && prefersDark) || 
+          (isOpen && !storedTheme && hasDarkClass)) {
         setIsDarkMode(true);
       } else {
         setIsDarkMode(false);
       }
-    }
-  }, [isOpen]);
-  
-  useEffect(() => {
-    if (theme === 'dark') {
-      setIsDarkMode(true);
-    } else if (theme === 'light') {
-      setIsDarkMode(false);
-    } else if (theme === 'system') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setIsDarkMode(prefersDark);
-    }
-  }, [theme]);
-  
-  useEffect(() => {
-    if (theme !== 'system') return;
-    
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
-    const handleChange = (e: MediaQueryListEvent) => {
-      setIsDarkMode(e.matches);
     };
     
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
+    updateDarkMode();
+    
+    if (theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      mediaQuery.addEventListener('change', updateDarkMode);
+      return () => mediaQuery.removeEventListener('change', updateDarkMode);
+    }
+  }, [isOpen, theme]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -122,10 +110,154 @@ export function TextPreviewModal({
               )}
             </div>
           ) : (
-            <div className={`whitespace-pre-wrap text-sm font-medium ${
+            <div className={`whitespace-pre-wrap text-sm ${
               isDarkMode ? 'text-foreground' : 'text-gray-800'
-            }`}>
-              {text || 'No text content available'}
+            } prose prose-sm dark:prose-invert max-w-none`}>
+              {text ? (
+                <div className="formatted-content">
+                  {(() => {
+                    const renderContent = () => {
+                      const sections: JSX.Element[] = [];
+                      let listItems: string[] = [];
+                      let tableContent: string[] = [];
+                      let inTable = false;
+                      let index = 0;
+                      
+                      const addListItems = () => {
+                        if (listItems.length === 0) return;
+                        
+                        sections.push(
+                          <div key={`list-${index++}`} className="my-3">
+                            {listItems.map((item, i) => (
+                              <div key={`item-${i}`} className="flex gap-2 my-1">
+                                <span className="flex-shrink-0">•</span>
+                                <span>{item}</span>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                        listItems = [];
+                      };
+                      
+                      text.split('\n').forEach(line => {
+                        let trimmed = line.trim();
+                        
+                        while (trimmed.startsWith('#')) {
+                          trimmed = trimmed.substring(1).trim();
+                        }
+                        
+                        if (!trimmed) return;
+                        
+                        if (trimmed === '<TABLE>') {
+                          addListItems();
+                          inTable = true;
+                          tableContent = [];
+                          return;
+                        }
+                        
+                        if (trimmed === '</TABLE>') {
+                          inTable = false;
+                          renderTable();
+                          return;
+                        }
+                        
+                        if (inTable) {
+                          tableContent.push(trimmed);
+                          return;
+                        }
+                        
+                        if (trimmed.startsWith('<TABLE-CAPTION>') && trimmed.endsWith('</TABLE-CAPTION>')) {
+                          const caption = trimmed.replace('<TABLE-CAPTION>', '').replace('</TABLE-CAPTION>', '');
+                          if (caption) {
+                            sections.push(
+                              <div key={`caption-${index++}`} className="font-semibold text-base mt-4 mb-1">
+                                {caption}
+                              </div>
+                            );
+                          }
+                          return;
+                        }
+                        
+                        if (trimmed.startsWith('•')) {
+                          listItems.push(trimmed.substring(1).trim());
+                          return;
+                        }
+                        
+                        if (trimmed.length < 100 && (trimmed === trimmed.toUpperCase() || /^[A-Z]/.test(trimmed))) {
+                          addListItems();
+                          
+                          const headingClass = trimmed.length < 30 
+                            ? 'text-lg font-bold mt-3 mb-2' 
+                            : 'text-base font-bold mt-2 mb-1';
+                            
+                          sections.push(
+                            <div key={`heading-${index++}`} className={headingClass}>
+                              {trimmed}
+                            </div>
+                          );
+                          return;
+                        }
+                        
+                        addListItems();
+                        sections.push(<p key={`p-${index++}`} className="my-2">{trimmed}</p>);
+                      });
+                      
+                      addListItems();
+                      
+                      function renderTable() {
+                        const dataLine = tableContent.find(line => 
+                          line.startsWith('<TABLE-DATA>') && line.endsWith('</TABLE-DATA>')
+                        );
+                        
+                        if (!dataLine) return;
+                        
+                        try {
+                          const jsonStr = dataLine.replace('<TABLE-DATA>', '').replace('</TABLE-DATA>', '');
+                          const data = JSON.parse(jsonStr) as { headers: string[], rows: string[][] };
+                          
+                          const headers = data.headers || [];
+                          const rows = data.rows || [];
+                          const hasHeaders = headers.length > 0;
+                          
+                          sections.push(
+                            <div key={`table-${index++}`} className="my-4 overflow-x-auto">
+                              <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-700 border border-gray-300 dark:border-gray-700">
+                                {hasHeaders && (
+                                  <thead>
+                                    <tr className="bg-gray-100 dark:bg-gray-800">
+                                      {headers.map((cell, i) => (
+                                        <th key={`th-${i}`} className="px-3 py-2 text-left text-xs font-medium uppercase">
+                                          {cell}
+                                        </th>
+                                      ))}
+                                    </tr>
+                                  </thead>
+                                )}
+                                <tbody>
+                                  {rows.map((row, i) => (
+                                    <tr key={`tr-${i}`} className={i % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'}>
+                                      {row.map((cell, j) => (
+                                        <td key={`td-${i}-${j}`} className="px-3 py-2 text-sm border-r last:border-r-0">
+                                          {cell}
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          );
+                        } catch (error) {
+                          console.error('Error parsing table:', error);
+                        }
+                      }
+                      return sections;
+                    };
+                    
+                    return renderContent();
+                  })()}
+                </div>
+              ) : 'No text content available'}
             </div>
           )}
         </div>
