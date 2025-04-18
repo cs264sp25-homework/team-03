@@ -3,6 +3,7 @@ import { z } from "zod";
 export const createMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
   content: z.string().min(1),
+  tabUrls: z.optional(z.array(z.string())),
 });
 
 export const updateMessageSchema = createMessageSchema.partial();
