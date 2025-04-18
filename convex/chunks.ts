@@ -12,15 +12,7 @@ import {
   export const addChunk = internalMutation({
     args: chunkSchema,
     handler: async (ctx, args) => {
-      const chunkId = await ctx.db.insert("chunks", {
-        tabId: args.tabId,
-        text: args.text,
-        counts: args.counts,
-        position: args.position,
-        metadata: args.metadata,
-        embedding: args.embedding,
-      });
-  
+      const chunkId = await ctx.db.insert("chunks", args);
       return chunkId;
     },
   });
@@ -68,6 +60,22 @@ import {
         results.push(chunk);
       }
       return results;
+    },
+  });
+  
+  export const deleteChunksByTabId = internalMutation({
+    args: {
+      tabId: v.id("tabs"),
+    },
+    handler: async (ctx, args) => {
+      const chunks = await ctx.db
+        .query("chunks")
+        .withIndex("by_tab_id", (q) => q.eq("tabId", args.tabId))
+        .collect();
+      
+      for (const chunk of chunks) {
+        await ctx.db.delete(chunk._id);
+      }
     },
   });
   

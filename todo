@@ -1,0 +1,8 @@
+
+Call after text is extracted:
+await updateTabText({
+  tabId: message.tabId,
+  text: cleanedText,
+});
+
+in background.js hopefully is easier. Otherwise you can try migrating to the web bundler thing right away.

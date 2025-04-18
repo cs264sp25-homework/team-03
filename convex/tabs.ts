@@ -1,15 +1,11 @@
-import {  v } from "convex/values";
+import { v } from "convex/values";
 import { mutationWithSession, queryWithSession } from "./lib/sessions";
 import { authenticationGuard } from "./guards/auth";
 import { ownershipGuard } from "./guards/ownership_guards";
 import { internal } from "./_generated/api";
-import { internalQuery } from "./_generated/server";
-import { internalMutation } from "./_generated/server";
-import { getEmbedding } from "./openai";
-import { Id } from "./_generated/dataModel";
+import { internalQuery, mutation } from "./_generated/server";
+import { ConvexError } from "convex/values";
 //import { internalMutation,internalAction } from "./_generated/server";
-
-
 
 export const getAll = queryWithSession({
   args: {
@@ -228,6 +224,65 @@ export const remove = mutationWithSession({
     
     // Delete the tab
     await ctx.db.delete(args.tabId);
+  },
+});
+
+export const updateTabText = mutation({
+  args: {
+    tabId: v.id("tabs"),
+    text: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const tab = await ctx.db.get(args.tabId);
+    if (!tab) {
+      throw new ConvexError({
+        code: 404,
+        message: "Tab not found",
+      });
+    }
+
+    await ctx.db.patch(args.tabId, {
+      content: args.text,
+      status: "text extracted",
+    });
+
+    // Schedule an action to vectorize the tab content
+    ctx.scheduler.runAfter(0, internal.vectorize.process, {
+      tabId: args.tabId,
+      text: args.text,
+    });
+
+    return true;
+  },
+});
+
+export const updateTabStatus = mutation({
+  args: {
+    tabId: v.id("tabs"),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("processing"),
+      v.literal("text extracted"),
+      v.literal("chunking"),
+      v.literal("embedding"),
+      v.literal("processed"),
+      v.literal("failed")
+    ),
+    error: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const tab = await ctx.db.get(args.tabId);
+    if (!tab) {
+      throw new ConvexError({
+        code: 404,
+        message: "Tab not found",
+      });
+    }
+
+    await ctx.db.patch(args.tabId, {
+      status: args.status,
+      error: args.error,
+    });
   },
 });
 

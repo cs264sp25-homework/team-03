@@ -8,8 +8,6 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-//import { ChromeTab } from "@/types/tab";
-
 interface TabListProps {
   tabs: chrome.tabs.Tab[];
   searchQuery: string;
@@ -108,25 +106,30 @@ export function TabList({ tabs, searchQuery, showOnlyFavorites = false }: TabLis
       setIsLoading(false);
     }
   };
-
+  
   return (
     <div className={cn(debug && "border border-red-500")}>
       <div className="px-4 py-3">
-        <div className="space-y-3">
-          {filteredTabs.map((tab) => {
-            const isExtracted = tab.url ? isTabExtracted(tab.url) : false;
-            const savedTab = tab.url ? findTabByUrl(tab.url) : null;
-            
-            return (
-              <div
-                key={tab.id}
-                className="flex items-start gap-3 p-4 transition-all duration-200 border border-gray-200 dark:border-gray-800 rounded-xl bg-background hover:bg-muted/50 shadow-sm hover:shadow-md"
-              >
-                <div 
-                  className="flex-1 min-w-0 cursor-pointer group"
-                  onClick={() => chrome.tabs.update(tab.id!, { active: true })}
-                >
-                  <div className="flex items-start gap-3">
+        {favoritesLoading ? (
+          <div className="py-8 text-center text-muted-foreground">
+            Loading tabs...
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredTabs.map((tab) => {
+              const isExtracted = tab.url ? isTabExtracted(tab.url) : false;
+              const savedTab = tab.url ? findTabByUrl(tab.url) : null;
+              
+              return (
+                <div
+                  key={tab.id}
+                  className="flex items-start gap-3 p-4 transition-all duration-200 border border-gray-200 shadow-sm dark:border-gray-800 rounded-xl bg-background hover:bg-muted/50 hover:shadow-md"
+                  >
+                  <div 
+                    className="flex-1 min-w-0 cursor-pointer"
+                    onClick={() => chrome.tabs.update(tab.id!, { active: true })}
+                  >
+                    <div className="flex items-start gap-3">
                     {tab.favIconUrl ? (
                       <img
                         src={tab.favIconUrl}
@@ -134,77 +137,80 @@ export function TabList({ tabs, searchQuery, showOnlyFavorites = false }: TabLis
                         className="flex-shrink-0 w-5 h-5 mt-1 rounded-sm shadow-sm"
                       />
                     ) : (
-                      <div className="flex-shrink-0 w-5 h-5 mt-1 bg-primary/10 rounded-sm flex items-center justify-center">
+                      <div className="flex items-center justify-center flex-shrink-0 w-5 h-5 mt-1 rounded-sm bg-primary/10">
                         <FileText className="w-3 h-3 text-primary" />
                       </div>
                     )}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium truncate text-foreground group-hover:text-primary transition-colors">
-                        {tab.title}
-                      </h3>
-                      <p className="text-xs truncate text-muted-foreground mt-0.5">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-medium truncate transition-colors text-foreground group-hover:text-primary">
+                          {tab.title}
+                        </h3>
+                        <p className="text-xs truncate text-muted-foreground mt-0.5">
                         {tab.url}
-                      </p>
-                      {savedTab && (
-                        <p className="mt-1.5 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full inline-block">
-                          {savedTab.content ? 
-                            `${savedTab.content.length.toLocaleString()} characters extracted` : 
-                            'No content extracted'}
                         </p>
-                      )}
+                        {savedTab && (
+                          <p className="mt-1.5 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full inline-block">
+                            {savedTab.content ? 
+                              `${savedTab.content.length.toLocaleString()} characters extracted` : 
+                              'No content extracted'}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex flex-shrink-0 gap-2 items-start mt-1">
+                  <div className="flex items-start flex-shrink-0 gap-2 mt-1">
                   <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`flex-shrink-0 rounded-full transition-colors ${tab.id && isFavorite(tab.id) ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'hover:bg-yellow-100 dark:hover:bg-yellow-900/30'}`}
-                    onClick={async () => {
-                      if (tab.id) {
-                        if (isFavorite(tab.id)) {
-                          const success = await removeFavorite(tab.id);
-                          if (success) {
-                            toast.success("Removed from favorites");
-                          }
-                        } else {
-                          const success = await addFavorite(tab);
-                          if (success) {
-                            toast.success("Added to favorites");
+                      variant="ghost"
+                      size="sm"
+                      className={`flex-shrink-0 rounded-full transition-colors ${tab.id && isFavorite(tab.id) ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'hover:bg-yellow-100 dark:hover:bg-yellow-900/30'}`}
+                      onClick={async () => {
+                        if (tab.id) {
+                          if (isFavorite(tab.id)) {
+                            const success = await removeFavorite(tab.id);
+                            if (success) {
+                              toast.success("Removed from favorites");
+                            }
+                          } else {
+                            const success = await addFavorite(tab);
+                            if (success) {
+                              toast.success("Added to favorites");
+                            }
                           }
                         }
-                      }
-                    }}
-                  >
-                    <Star className={`w-4 h-4 ${tab.id && isFavorite(tab.id) ? 'fill-yellow-400 text-yellow-400' : 'hover:text-yellow-600 dark:hover:text-yellow-400'}`} />
-                  </Button>
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`flex-shrink-0 rounded-full transition-colors ${isExtracted ? 'bg-primary/10' : 'hover:bg-primary/10'}`}
-                    onClick={() => handleExtractText(tab)}
-                    disabled={isLoading}
-                  >
-                    {isExtracted ? (
-                      <RefreshCw className="w-4 h-4 mr-1 text-primary" />
+                      }}
+                      disabled={favoritesLoading}
+                    >
+                      <Star className={`w-4 h-4 ${tab.id && isFavorite(tab.id) ? 'fill-yellow-400 text-yellow-400' : 'hover:text-yellow-600 dark:hover:text-yellow-400'}`} />
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={`flex-shrink-0 rounded-full transition-colors ${isExtracted ? 'bg-primary/10' : 'hover:bg-primary/10'}`}
+                      onClick={() => handleExtractText(tab)}
+                      disabled={isLoading}
+                    >
+                      {isExtracted ? (
+                        <RefreshCw className="w-4 h-4 mr-1 text-primary" />
                     ) : (
-                      <FileText className="w-4 h-4 mr-1 text-primary" />
-                    )}
-                    <span className="text-xs font-medium">
-                      {isLoading ? "Extracting..." : isExtracted ? "Re-extract" : "Extract Text"}</span>
-                  </Button>
+                        <FileText className="w-4 h-4 mr-1 text-primary" />
+                      )}
+                      <span className="text-xs font-medium">
+                        {isLoading ? "Extracting..." : isExtracted ? "Re-extract" : "Extract Text"}
+                      </span>
+                    </Button>
+                  </div>
                 </div>
+              );
+            })}
+            
+            {!favoritesLoading && filteredTabs.length === 0 && (
+              <div className="py-8 text-center text-muted-foreground">
+                {searchQuery ? "No matching tabs found" : "No favorite tabs"}
               </div>
-            );
-          })}
-          
-          {filteredTabs.length === 0 && (
-            <div className="py-8 text-center text-muted-foreground">
-              {searchQuery ? "No matching tabs found" : "No favorite tabs"}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
       <TextPreviewModal
