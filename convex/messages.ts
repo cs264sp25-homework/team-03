@@ -76,6 +76,7 @@ export const create = mutation({
     chatId: v.id("chats"),
     content: v.string(),
     sessionId: v.string(),
+    tabUrls: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
     // Check if the chat exists
@@ -113,9 +114,11 @@ export const create = mutation({
     });
 
     // Schedule an action that calls ChatGPT and updates the message
-    ctx.scheduler.runAfter(0, internal.openai.completion, {
+    console.log("Sending to completion with tabUrls:", args.tabUrls);
+    console.log("Full completion args:", {
       sessionId: args.sessionId,
       chatId: args.chatId,
+      tabUrls: args.tabUrls,
       messages: [
         ...messages.map((message) => ({
           role: message.role,
@@ -128,6 +131,26 @@ export const create = mutation({
       ],
       placeholderMessageId,
     });
+
+    ctx.scheduler.runAfter(0, internal.openai.completion, {
+      sessionId: args.sessionId,
+      chatId: args.chatId,
+      tabUrls: args.tabUrls,
+      messages: [
+        ...messages.map((message) => ({
+          role: message.role,
+          content: message.content,
+        })),
+        {
+          role: "user",
+          content: args.content,
+        },
+      ],
+      placeholderMessageId,
+    });
+
+    
+    console.log("tabUrls", args.tabUrls);
 
     return messageId;
   },

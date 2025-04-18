@@ -99,6 +99,17 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     // This will run even if popup is closed
     console.log('Tab updated:', message.tabId, message.url, message.title);
   }
+
+  // Handle messages from the popup
+  if (message.type === "CREATE_TAB_GROUP") {
+    handleCreateTabGroup(message.name, message.color)
+      .then(sendResponse)
+      .catch((error) => {
+        console.error("Error creating tab group:", error);
+        sendResponse({ error: error.message });
+      });
+    return true; // Keep the message channel open for async response
+  }
 });
 
 // Direct handling of tab events
@@ -136,3 +147,34 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     });
   }
 });
+
+async function handleCreateTabGroup(name: string, color?: string) {
+  try {
+    // Get all current tabs in the current window
+    const tabs = await chrome.tabs.query({ currentWindow: true });
+    const tabIds = tabs.map((tab) => tab.id).filter((id): id is number => id !== undefined);
+
+    if (tabIds.length === 0) {
+      throw new Error("No tabs found to group");
+    }
+
+    // Create a new tab group
+    const groupId = await chrome.tabs.group({ tabIds });
+    
+    // Update the group properties
+    await chrome.tabGroups.update(groupId, {
+      title: name,
+      color: color as chrome.tabGroups.ColorEnum,
+      collapsed: false,
+    });
+
+    return {
+      success: true,
+      groupId,
+      tabCount: tabIds.length,
+    };
+  } catch (error) {
+    console.error("Error in handleCreateTabGroup:", error);
+    throw error;
+  }
+}

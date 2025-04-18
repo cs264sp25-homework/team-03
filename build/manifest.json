@@ -11,6 +11,8 @@
     },
     "action": {
       "default_popup": "index.html",
+      "default_width": 800,
+      "default_height": 600,
       "default_icon": {
         "16": "tabAssistLogo.png",
         "32": "tabAssistLogo.png",
@@ -18,7 +20,7 @@
         "128": "tabAssistLogo.png"
       }
     },
-    "permissions": ["tabs", "storage", "scripting", "activeTab", "contextMenus"],
+    "permissions": ["tabs", "tabGroups", "storage", "scripting", "activeTab", "contextMenus"],
     "host_permissions": ["<all_urls>"],
     "web_accessible_resources": [{
       "resources": ["readability.js", "lib/Readability.js"],

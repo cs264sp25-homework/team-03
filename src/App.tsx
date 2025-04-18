@@ -12,6 +12,7 @@ import { ChatCreationView } from "@/components/chat/ChatCreationView";
 import { useQueryUserChat } from "@/hooks/use-query-user-chat";
 import { useCreateChat } from "@/hooks/useCreateChat";
 import MessagesPage from "@/pages/messages/messages-page";
+import { TabGroupButton } from "@/components/TabGroupButton";
 
 
 declare global {
@@ -137,6 +138,7 @@ function App() {
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
             />
+            {activeView === 'all' && <TabGroupButton />}
             <div className="flex-1 overflow-y-auto">
               <TabList 
                 tabs={filteredTabs}

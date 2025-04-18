@@ -105,8 +105,8 @@ export function TextPreviewModal({
                 <p className={`text-sm ${
                   isDarkMode ? 'text-muted-foreground' : 'text-gray-600'
                 }`}>
-                  {error}
-                </p>
+                {error}
+              </p>
               )}
             </div>
           ) : (

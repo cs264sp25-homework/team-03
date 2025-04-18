@@ -20,7 +20,7 @@
         "128": "tabAssistLogo.png"
       }
     },
-    "permissions": ["tabs", "storage", "scripting", "activeTab", "contextMenus"],
+    "permissions": ["tabs", "tabGroups", "storage", "scripting", "activeTab", "contextMenus"],
     "host_permissions": ["<all_urls>"],
     "web_accessible_resources": [{
       "resources": ["readability.js", "lib/Readability.js"],

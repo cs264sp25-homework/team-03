@@ -116,6 +116,7 @@ export const completion = internalAction({
   args: {
     sessionId: v.string(),
     chatId: v.id("chats"),
+    tabUrls: v.optional(v.array(v.string())),
     messages: v.array(
       v.object({
         role: v.union(
@@ -129,12 +130,29 @@ export const completion = internalAction({
     placeholderMessageId: v.id("messages"),
   },
   handler: async (ctx, args) => {
+    console.log("Completion handler received args:", {
+      sessionId: args.sessionId,
+      chatId: args.chatId,
+      tabUrls: args.tabUrls,
+      messagesCount: args.messages.length,
+      placeholderMessageId: args.placeholderMessageId
+    });
+
     // Get tabs for this session
     const tabs = await ctx.runQuery(api.tabs.getAll, {
       sessionId: args.sessionId as SessionId,
     });
 
-    console.log("tabs:", tabs);
+    //console.log("All tabs:", tabs.map(tab => ({ url: tab.url, id: tab._id })));
+    //console.log("Received tabUrls:", args.tabUrls);
+
+    // Filter tabs based on tabUrls if provided
+    const filteredTabs = args.tabUrls && args.tabUrls.length > 0
+      ? tabs.filter(tab => args.tabUrls?.includes(tab.url))
+      : tabs;
+
+    //console.log("Filtered tabs:", filteredTabs.map(tab => ({ url: tab.url, id: tab._id })));
+    
     
     const openai = createOpenAI({
       apiKey: process.env.OPENAI_API_KEY,
@@ -157,7 +175,7 @@ export const completion = internalAction({
             });
             return ctx.runAction(internal.chunks.search, {
               query,
-              tabIds: tabIds?.map((id) => id as Id<"tabs">) ?? [],
+              tabIds: filteredTabs.map(tab => tab._id),
             });
           },
         }),
