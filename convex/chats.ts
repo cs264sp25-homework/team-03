@@ -1,5 +1,4 @@
 import { v } from "convex/values";
-//import { query, mutation } from "./_generated/server";
 import { ownershipGuard } from "./guards/ownership_guards";
 import { authenticationGuard } from "./guards/auth";
 import { mutationWithSession, queryWithSession } from "./lib/sessions";
@@ -74,7 +73,7 @@ export const create = mutationWithSession({
       description: args.description,
       tabGroupId: args.tabGroupId,
       messageCount: 0,
-      tabCount: 0,
+     
     });
     return chatId;
   },

@@ -1,21 +1,33 @@
 import { useTabGroups } from "../hooks/useTabGroups";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function CreateTabGroupButton() {
   const { createGroupWithAllTabs, isLoading, error } = useTabGroups();
-  const [groupName, setGroupName] = useState("");
+  const [groupName, setGroupName] = useState(() => {
+    const saved = localStorage.getItem('current-tab-group-name');
+    console.log("Loaded saved group name:", saved);
+    return saved || "";
+  });
 
   const handleCreateGroup = async () => {
     if (!groupName.trim()) return;
     
     try {
+      console.log("Creating group with name:", groupName);
       const result = await createGroupWithAllTabs(groupName.trim());
       console.log("Created group with", result.tabCount, "tabs");
       setGroupName(""); // Clear input after success
+      localStorage.removeItem('current-tab-group-name'); // Clear storage after success
     } catch (err) {
       console.error("Failed to create group:", err);
     }
   };
+
+  // Save group name to storage whenever it changes
+  useEffect(() => {
+    console.log("Saving group name:", groupName);
+    localStorage.setItem('current-tab-group-name', groupName);
+  }, [groupName]);
 
   return (
     <div className="flex flex-col gap-2 p-4">

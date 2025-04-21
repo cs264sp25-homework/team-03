@@ -21,6 +21,8 @@ import type * as guards_ownership_guards from "../guards/ownership_guards.js";
 import type * as lib_sessions from "../lib/sessions.js";
 import type * as messages from "../messages.js";
 import type * as openai from "../openai.js";
+import type * as tabGroupMembers from "../tabGroupMembers.js";
+import type * as tabGroups from "../tabGroups.js";
 import type * as tabs from "../tabs.js";
 import type * as users from "../users.js";
 import type * as vectorize from "../vectorize.js";
@@ -42,6 +44,8 @@ declare const fullApi: ApiFromModules<{
   "lib/sessions": typeof lib_sessions;
   messages: typeof messages;
   openai: typeof openai;
+  tabGroupMembers: typeof tabGroupMembers;
+  tabGroups: typeof tabGroups;
   tabs: typeof tabs;
   users: typeof users;
   vectorize: typeof vectorize;

@@ -60,13 +60,13 @@ export default defineSchema({
   .index("by_user_and_tab_id", ["userId", "tabId"])
   .index("by_user_and_url", ["userId", "url"]),
 
+
   tabGroups: defineTable({
     userId: v.id("users"),  // Each tab group belongs to a user
     name: v.string(),
     description: v.optional(v.string()),
     chatId: v.optional(v.id("chats")),  // Optional: link to a chat
   }).index("by_user_id", ["userId"]),
-
 
   tabs: defineTable({
     userId: v.id("users"),  // Each tab belongs to a user
@@ -81,14 +81,12 @@ export default defineSchema({
   .index("by_group_id", ["tabGroupId"])
   .index("by_user_and_url", ["userId", "url"]),
   
-  
   chats: defineTable({
     userId: v.id("users"),  // Each chat belongs to a user
     tabGroupId: v.optional(v.id("tabGroups")),  //Optional: Link chat to a tab group
     title: v.string(),
     description: v.optional(v.string()),
     messageCount: v.number(),
-    tabCount: v.number(),
   })
   .index("by_user_id", ["userId"])
   .index("by_group_id", ["tabGroupId"]),
@@ -99,12 +97,20 @@ export default defineSchema({
     role: v.union(v.literal("user"), v.literal("assistant")),
   }).index("by_chat_id", ["chatId"]),
 
-  
   chunks: defineTable(chunkSchema)
     .vectorIndex("by_embedding", {
       vectorField: "embedding",
       dimensions: 1536,
       filterFields: ["tabId"],
     })
-    .index("by_tab_id", ["tabId"])
+    .index("by_tab_id", ["tabId"]),
+
+  tabGroupMembers: defineTable({
+    tabId: v.id("tabs"),
+    tabGroupId: v.id("tabGroups"),
+    // Optional: group-specific metadata
+    addedAt: v.number(), // timestamp
+  })
+  .index("by_tab_group", ["tabGroupId"])
+  .index("by_tab", ["tabId"])
 });
