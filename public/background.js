@@ -56,44 +56,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "extractText" && message.tabId) {
     (async () => {
       try {
-        // First, inject the Readability library and our wrappers
-        const injectResults = await chrome.scripting.executeScript({
+        // Inject libraries and extract content
+        await chrome.scripting.executeScript({
           target: { tabId: message.tabId },
           world: "MAIN",
-          files: [
-            "lib/Readability.js",  // Mozilla's Readability library
-            "readabilityWrapper.js", // Our wrapper for Readability
-            "contentExtractor.js"    // Our main content extractor
-          ],
+          files: ["lib/Readability.js", "readabilityWrapper.js", "contentExtractor.js"]
         });
         
-        // After injecting the ContentExtractor module, run the extraction
-        const extractionResults = await chrome.scripting.executeScript({
+        // Run extraction
+        const results = await chrome.scripting.executeScript({
           target: { tabId: message.tabId },
           world: "MAIN",
-          func: () => {
-            // Call the ContentExtractor module that was injected
-            // Set includeUIElements to true to extract text from menus, panels, etc.
-            return window.ContentExtractor.extract({ includeUIElements: true });
-          },
+          func: () => window.ContentExtractor.extract({ includeUIElements: true })
         });
 
-        if (!extractionResults?.[0]?.result) {
-          throw new Error("No content extracted");
-        }
-
-        const { title, content, excerpt, siteName, url, timestamp } = extractionResults[0].result;
+        // Process results
+        if (!results?.[0]?.result) throw new Error("No content extracted");
+        
+        const { title, content, excerpt, siteName, url, timestamp } = results[0].result;
         sendResponse({
           success: true,
           text: content,
-          metadata: { title, excerpt, siteName, url, timestamp },
+          metadata: { title, excerpt, siteName, url, timestamp }
         });
       } catch (error) {
-        console.error("Error:", error);
         sendResponse({
           success: false,
-          error:
-            error instanceof Error ? error.message : "Failed to extract text",
+          error: error instanceof Error ? error.message : "Failed to extract text"
         });
       }
     })();

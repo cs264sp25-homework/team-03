@@ -1,141 +1,119 @@
-/**
- * Content Extractor Module - Extracts content from web pages
- */
 window.ContentExtractor = window.ContentExtractor || {
-  // Main extraction function
   extract: function(options = {}) {
     const includeUIElements = options.includeUIElements || false;
     try {
       // Try Readability first if available
       if (typeof Readability !== 'undefined' && typeof window.ReadabilityWrapper !== 'undefined') {
-        const readabilityResult = window.ReadabilityWrapper.extract({ includeUIElements });
-        if (readabilityResult?.content) {
-          const formattedContent = window.ReadabilityWrapper.htmlToFormattedText(readabilityResult.content);
+        const result = window.ReadabilityWrapper.extract({ includeUIElements });
+        if (result?.content) {
+          const content = window.ReadabilityWrapper.htmlToFormattedText(result.content);
           return {
-            title: readabilityResult.title,
-            content: formattedContent,
-            excerpt: readabilityResult.excerpt,
-            length: formattedContent.length,
-            siteName: readabilityResult.siteName,
-            url: readabilityResult.url,
-            timestamp: readabilityResult.timestamp,
-            byline: readabilityResult.byline,
+            title: result.title,
+            content,
+            excerpt: result.excerpt,
+            length: content.length,
+            siteName: result.siteName,
+            url: result.url,
+            timestamp: result.timestamp,
+            byline: result.byline,
             extractionMethod: 'readability'
           };
         }
       }
       
       // Custom extraction fallback
-      console.log('Falling back to custom extraction');
-      const documentClone = document.cloneNode(true);
       const doc = new DOMParser().parseFromString(
-        documentClone.documentElement.outerHTML, "text/html"
+        document.cloneNode(true).documentElement.outerHTML, "text/html"
       );
 
+      // Clean document and find main content
       this._cleanDocument(doc, includeUIElements);
-      const mainContent = includeUIElements ? doc.body : this._findMainContent(doc, includeUIElements);
+      const mainContent = includeUIElements ? doc.body : this._findMainContent(doc);
+      
+      // Extract content preserving original document order
       const tables = Array.from(mainContent.querySelectorAll('table'));
       const tableData = this._extractTables(tables);
-      let finalContent = this._extractFormattedContent(mainContent, tables, tableData).trim();
+      let content = this._extractFormattedContent(mainContent, tables, tableData).trim();
       
-      if (finalContent.length < 200) {
-        finalContent = this._extractFallbackContent(mainContent);
+      // Use fallback if content is too short
+      if (content.length < 200) {
+        content = this._extractFallbackContent(mainContent);
       }
 
       return {
         title: document.title,
-        content: finalContent,
-        excerpt: finalContent.slice(0, 150) + "...",
-        length: finalContent.length,
+        content,
+        excerpt: content.slice(0, 150) + "...",
+        length: content.length,
         siteName: new URL(document.location.href).hostname,
         url: document.location.href,
         timestamp: new Date().toISOString()
       };
     } catch (error) {
-      console.error("Error in extraction:", error);
       return this._fallbackExtraction();
     }
   },
 
-  // Remove non-content elements from the document
   _cleanDocument: function(doc, includeUIElements) {
-    // Elements to always remove
-    const alwaysRemove = [
+    const selectors = [
+      // Always remove these
       'script', 'style', 'iframe', 'noscript',
       '[class*="cookie"]', '[id*="cookie"]',
-      '[class*="ad-"]', '[class*="advertisement"]'
+      '[class*="ad-"]', '[class*="advertisement"]',
+      
+      // Conditionally remove UI elements
+      ...(includeUIElements ? [] : [
+        'nav', 'footer', 'header', 'aside',
+        '[role="banner"]', '[role="navigation"]', '[role="complementary"]', '[role="alert"]',
+        '[id*="banner"]', '[id*="nav"]', '[id*="menu"]', '[id*="header"]', '[id*="footer"]',
+        '[class*="banner"]', '[class*="nav"]', '[class*="menu"]', '[class*="header"]',
+        '[class*="footer"]', '[class*="flash"]', '[class*="alert"]', '[class*="error"]',
+        '[class*="popup"]', '[class*="modal"]', '[id*="popup"]', '[id*="modal"]',
+        '[class*="comment"]', '[id*="comment"]', '[class*="social"]', '[id*="social"]',
+        '.sidebar', '#sidebar', '.widget', '.recommended', '.related'
+      ])
     ];
     
-    // Elements to conditionally remove based on mode
-    const conditionallyRemove = includeUIElements ? [] : [
-      'nav', 'footer', 'header', 'aside',
-      '[role="banner"]', '[role="navigation"]', '[role="complementary"]', '[role="alert"]',
-      '[id*="banner"]', '[id*="nav"]', '[id*="menu"]', '[id*="header"]', '[id*="footer"]',
-      '[class*="banner"]', '[class*="nav"]', '[class*="menu"]', '[class*="header"]', 
-      '[class*="footer"]', '[class*="flash"]', '[class*="alert"]', '[class*="error"]',
-      '[class*="popup"]', '[class*="modal"]', '[id*="popup"]', '[id*="modal"]',
-      '[class*="comment"]', '[id*="comment"]', '[class*="social"]', '[id*="social"]',
-      '.sidebar', '#sidebar', '.widget', '.recommended', '.related'
-    ];
-    
-    [...alwaysRemove, ...conditionallyRemove].forEach((selector) => {
-      try {
-        doc.querySelectorAll(selector).forEach(el => el.parentNode?.removeChild(el));
-      } catch (e) { /* Ignore errors */ }
+    selectors.forEach(selector => {
+      try { doc.querySelectorAll(selector).forEach(el => el.parentNode?.removeChild(el)); } catch (e) {}
     });
   },
 
-  // Find the main content area of the document
-  _findMainContent: function(doc, includeUIElements) {
-    const contentSelectors = [
-      "main", "article", "[role=\"main\"]", "#content", ".content",
-      ".post-content", ".article-content", ".entry-content", "#main", ".main"
-    ];
+  _findMainContent: function(doc) {
+    const selectors = ["main", "article", "[role=\"main\"]", "#content", ".content",
+      ".post-content", ".article-content", ".entry-content", "#main", ".main"];
 
-    for (const selector of contentSelectors) {
+    for (const selector of selectors) {
       const element = doc.querySelector(selector);
-      if (element && this._hasSubstantialContent(element)) {
+      if (element && element.textContent.length > 250 && element.querySelectorAll("p, h1, h2, h3, h4, h5, h6").length > 2) {
         return element;
       }
     }
     return doc.body;
   },
 
-  // Check if an element has substantial content
-  _hasSubstantialContent: function(element) {
-    const text = element.textContent || "";
-    return text.length > 250 && element.querySelectorAll("p, h1, h2, h3, h4, h5, h6").length > 2;
-  },
-
-  // Extract tables from the document
   _extractTables: function(tables) {
     return tables.map(table => {
-      // Extract caption
       const caption = table.querySelector('caption')?.textContent?.trim() || '';
-      
-      // Extract headers
       const headerRow = table.querySelector('thead tr');
       const rawHeaders = headerRow ? 
         Array.from(headerRow.querySelectorAll('th')).map(th => th.textContent?.trim() || '') :
         Array.from(table.querySelectorAll('tr:first-child th, tr:first-child td')).map(cell => cell.textContent?.trim() || '');
       
-      // Extract rows
       const rawRows = Array.from(table.querySelectorAll('tbody tr, tr'))
         .filter(row => row !== headerRow)
         .map(row => Array.from(row.querySelectorAll('td')).map(td => td.textContent?.trim() || ''));
       
-      // Filter out empty columns
-      const columnsToRemove = rawHeaders.map((header, index) => {
-        const isEmptyColumn = header === '' || header === 'Wappen';
-        const hasEmptyData = rawRows.every(row => !row[index] || row[index] === '');
-        return (isEmptyColumn || hasEmptyData) ? index : -1;
-      }).filter(index => index !== -1);
+      // Remove empty columns
+      const columnsToRemove = rawHeaders.map((header, index) => 
+        ((header === '' || header === 'Wappen') || rawRows.every(row => !row[index] || row[index] === '')) ? index : -1
+      ).filter(index => index !== -1);
       
-      // Apply filtering
-      const headers = rawHeaders.filter((_, i) => !columnsToRemove.includes(i));
-      const rows = rawRows.map(row => row.filter((_, i) => !columnsToRemove.includes(i)));
-      
-      return { caption, headers, rows };
+      return { 
+        caption, 
+        headers: rawHeaders.filter((_, i) => !columnsToRemove.includes(i)),
+        rows: rawRows.map(row => row.filter((_, i) => !columnsToRemove.includes(i)))
+      };
     });
   },
 
@@ -148,81 +126,62 @@ window.ContentExtractor = window.ContentExtractor || {
    * @private
    */
   _extractFormattedContent: function(mainContent, tables, tableData) {
-    let formattedContent = '';
+    let content = '';
     
-    // Create a map of tables to their data for quick lookup
+    // Create a map of tables to their extracted data
     const tableMap = new Map();
-    tables.forEach((table, index) => {
-      tableMap.set(table, tableData[index]);
-    });
+    tables.forEach((table, index) => tableMap.set(table, tableData[index]));
     
-    // Function to insert table data
-    const insertTable = (tableData) => {
-      formattedContent += '\n<TABLE-CAPTION>' + (tableData.caption || '') + '</TABLE-CAPTION>\n';
-      formattedContent += '<TABLE>\n<TABLE-DATA>' + 
-        JSON.stringify({ headers: tableData.headers, rows: tableData.rows }) + 
-        '</TABLE-DATA>\n</TABLE>\n\n';
-    };
+    // Create a document walker to traverse elements in their natural DOM order
+    const walker = document.createTreeWalker(
+      mainContent,
+      NodeFilter.SHOW_ELEMENT,
+      {
+        acceptNode: function(node) {
+          const tag = node.tagName.toLowerCase();
+          // Accept content elements and tables
+          if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'li', 'blockquote', 'pre', 'code', 'table'].includes(tag)) {
+            return NodeFilter.FILTER_ACCEPT;
+          }
+          return NodeFilter.FILTER_SKIP;
+        }
+      }
+    );
     
-    // Function to process a node and its children recursively
-    const processNode = (node) => {
-      // Skip empty text nodes and script/style tags
-      if (node.nodeType === Node.TEXT_NODE) {
-        return;
+    // Process each element in document order
+    let currentNode;
+    while (currentNode = walker.nextNode()) {
+      const tag = currentNode.tagName.toLowerCase();
+      const text = currentNode.textContent?.trim();
+      if (!text) continue;
+      
+      // Handle tables
+      if (tag === 'table' && tableMap.has(currentNode)) {
+        const data = tableMap.get(currentNode);
+        content += `\n<TABLE-CAPTION>${data.caption || ''}</TABLE-CAPTION>\n`;
+        content += `<TABLE>\n<TABLE-DATA>${JSON.stringify({
+          headers: data.headers, rows: data.rows
+        })}</TABLE-DATA>\n</TABLE>\n\n`;
+        continue;
       }
       
-      if (node.nodeType === Node.ELEMENT_NODE) {
-        const tagName = node.tagName.toLowerCase();
-        
-        // Handle tables specially
-        if (tagName === 'table' && tableMap.has(node)) {
-          insertTable(tableMap.get(node));
-          return; // Skip processing children of tables
-        }
-        
-        // Process content elements
-        if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'li', 'blockquote', 'pre', 'code'].includes(tagName)) {
-          const text = node.textContent?.trim() || "";
-          if (!text) return;
-          
-          // Format the element based on its tag
-          if (tagName.match(/^h[1-6]$/)) {
-            // Add proper heading formatting with level indicators
-            const level = parseInt(tagName.substring(1));
-            const prefix = '#'.repeat(level) + ' ';
-            formattedContent += prefix + text + '\n\n';
-          } else if (tagName === 'p') {
-            formattedContent += text + '\n\n';
-          } else if (tagName === 'li') {
-            formattedContent += '• ' + text + '\n';
-          } else if (tagName === 'blockquote') {
-            formattedContent += '> ' + text.replace(/\n/g, '\n> ') + '\n\n';
-          } else if (tagName === 'pre' || tagName === 'code') {
-            formattedContent += '```\n' + text + '\n```\n\n';
-          }
-          
-          return; // Skip processing children of content elements
-        }
-        
-        // For other elements, process their children
-        for (let i = 0; i < node.childNodes.length; i++) {
-          processNode(node.childNodes[i]);
-        }
+      // Format content based on element type
+      if (tag.match(/^h[1-6]$/)) {
+        content += `${('#').repeat(parseInt(tag.substring(1)))} ${text}\n\n`;
+      } else if (tag === 'p') {
+        content += `${text}\n\n`;
+      } else if (tag === 'li') {
+        content += `• ${text}\n`;
+      } else if (tag === 'blockquote') {
+        content += `> ${text.replace(/\n/g, '\n> ')}\n\n`;
+      } else if (tag === 'pre' || tag === 'code') {
+        content += `\`\`\`\n${text}\n\`\`\`\n\n`;
       }
-    };
+    }
     
-    // Start processing from the main content element
-    processNode(mainContent);
-    
-    return formattedContent;
+    return content;
   },
 
-  /**
-   * Extract fallback content when structured extraction fails
-   * @param {Element} mainContent - The main content element
-   * @returns {string} Extracted text
-   * @private
-   */
   _extractFallbackContent: function(mainContent) {
     return mainContent.textContent?.replace(/\s+/g, " ")
       .replace(/\. /g, ".\n")
@@ -231,11 +190,6 @@ window.ContentExtractor = window.ContentExtractor || {
       .trim() || "";
   },
 
-  /**
-   * Complete fallback extraction when everything else fails
-   * @returns {Object} Basic extracted content
-   * @private
-   */
   _fallbackExtraction: function() {
     const text = document.body.textContent || document.body.innerText || "";
     const cleanText = text.replace(/\s+/g, " ").trim();
