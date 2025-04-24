@@ -56,151 +56,37 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "extractText" && message.tabId) {
     (async () => {
       try {
-        const results = await chrome.scripting.executeScript({
+        // First, inject the Readability library and our wrappers
+        const injectResults = await chrome.scripting.executeScript({
+          target: { tabId: message.tabId },
+          world: "MAIN",
+          files: [
+            "lib/Readability.js",  // Mozilla's Readability library
+            "readabilityWrapper.js", // Our wrapper for Readability
+            "contentExtractor.js"    // Our main content extractor
+          ],
+        });
+        
+        // After injecting the ContentExtractor module, run the extraction
+        const extractionResults = await chrome.scripting.executeScript({
           target: { tabId: message.tabId },
           world: "MAIN",
           func: () => {
-            try {
-              const documentClone = document.cloneNode(true);
-              const parser = new DOMParser();
-              const doc = parser.parseFromString(
-                documentClone.documentElement.outerHTML,
-                "text/html"
-              );
-
-              const elementsToRemove = [
-                'script', 'style', 'iframe', 'noscript',
-                'nav', 'footer', 'header', 'aside',
-                '[role="banner"]', '[role="navigation"]', '[role="complementary"]', '[role="alert"]',
-                '[id*="banner"]', '[id*="nav"]', '[id*="menu"]', '[id*="header"]', '[id*="footer"]',
-                '[class*="banner"]', '[class*="nav"]', '[class*="menu"]', '[class*="header"]', 
-                '[class*="footer"]', '[class*="flash"]', '[class*="alert"]', '[class*="error"]'
-              ];
-
-              elementsToRemove.forEach((selector) => {
-                doc.querySelectorAll(selector).forEach((el) => {
-                  if (el.parentNode) {
-                    el.parentNode.removeChild(el);
-                  }
-                });
-              });
-
-              const mainContent = doc.querySelector("main") ||
-                doc.querySelector("article") ||
-                doc.querySelector('[role="main"]') ||
-                doc.querySelector("#content") ||
-                doc.querySelector(".content") ||
-                doc.body;
-              
-              const tables = Array.from(mainContent.querySelectorAll('table'));
-              const tableData = tables.map(table => {
-                const caption = table.querySelector('caption')?.textContent?.trim() || '';
-                const headerRow = table.querySelector('thead tr');
-                
-                const rawHeaders = headerRow ? 
-                  Array.from(headerRow.querySelectorAll('th')).map(th => th.textContent?.trim() || '') :
-                  Array.from(table.querySelectorAll('tr:first-child th, tr:first-child td')).map(cell => cell.textContent?.trim() || '');
-                
-                const rawRows = Array.from(table.querySelectorAll('tbody tr, tr'))
-                  .filter(row => row !== headerRow)
-                  .map(row => Array.from(row.querySelectorAll('td')).map(td => td.textContent?.trim() || ''));
-                
-                const columnsToRemove = rawHeaders.map((header, index) => {
-                  const isEmptyColumn = header === '' || header === 'Wappen';
-                  const hasEmptyData = rawRows.every(row => !row[index] || row[index] === '');
-                  return (isEmptyColumn || hasEmptyData) ? index : -1;
-                }).filter(index => index !== -1);
-                
-                const headers = rawHeaders.filter((_, i) => !columnsToRemove.includes(i));
-                const rows = rawRows.map(row => row.filter((_, i) => !columnsToRemove.includes(i)));
-                
-                return { caption, headers, rows };
-              });
-              
-              const contentSelectors = 'h1, h2, h3, h4, h5, h6, p, li';
-              const allElements = Array.from(mainContent.querySelectorAll(contentSelectors));
-              
-              allElements.sort((a, b) => {
-                const position = a.compareDocumentPosition(b);
-                return (position & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 
-                       (position & Node.DOCUMENT_POSITION_PRECEDING) ? 1 : 0;
-              });
-              
-              let formattedContent = '';
-              let tableIndex = 0;
-              
-              const insertTable = (table) => {
-                formattedContent += '\n<TABLE-CAPTION>' + (table.caption || '') + '</TABLE-CAPTION>\n';
-                
-                formattedContent += '<TABLE>\n<TABLE-DATA>' + 
-                  JSON.stringify({ headers: table.headers, rows: table.rows }) + 
-                  '</TABLE-DATA>\n</TABLE>\n\n';
-              };
-              
-              allElements.forEach(element => {
-                const tagName = element.tagName.toLowerCase();
-                const text = element.textContent.trim();
-                if (!text) return;
-                
-                if (tagName.match(/^h[1-6]$/) || tagName === 'p') {
-                  while (tableIndex < tables.length && 
-                         (tables[tableIndex].compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING)) {
-                    insertTable(tableData[tableIndex++]);
-                  }
-                }
-                if (tagName.match(/^h[1-6]$/) || tagName === 'p') {
-                  formattedContent += text + '\n\n';
-                } else if (tagName === 'li') {
-                  formattedContent += '• ' + text + '\n';
-                }
-              });
-              
-              while (tableIndex < tables.length) {
-                insertTable(tableData[tableIndex++]);
-              }
-              
-              let cleanText = formattedContent.trim();
-              
-              if (cleanText.length < 200) {
-                cleanText = mainContent.textContent?.replace(/\s+/g, " ")
-                  .replace(/\. /g, ".\n")
-                  .replace(/\: /g, ":\n")
-                  .replace(/\n+/g, '\n\n')
-                  .trim() || "";
-              }
-
-              return {
-                title: document.title,
-                content: cleanText,
-                excerpt: cleanText.slice(0, 150) + "...",
-                length: cleanText.length,
-                siteName: new URL(document.location.href).hostname,
-              };
-            } catch (error) {
-              console.error("Error in extraction:", error);
-
-              const text =
-                document.body.textContent || document.body.innerText || "";
-              return {
-                title: document.title,
-                content: text.replace(/\s+/g, " ").trim(),
-                excerpt: text.slice(0, 150) + "...",
-                length: text.length,
-                siteName: new URL(document.location.href).hostname,
-              };
-            }
+            // Call the ContentExtractor module that was injected
+            // Set includeUIElements to true to extract text from menus, panels, etc.
+            return window.ContentExtractor.extract({ includeUIElements: true });
           },
         });
 
-        if (!results?.[0]?.result) {
+        if (!extractionResults?.[0]?.result) {
           throw new Error("No content extracted");
         }
 
-        const { title, content, excerpt, siteName } = results[0].result;
+        const { title, content, excerpt, siteName, url, timestamp } = extractionResults[0].result;
         sendResponse({
           success: true,
           text: content,
-          metadata: { title, excerpt, siteName },
+          metadata: { title, excerpt, siteName, url, timestamp },
         });
       } catch (error) {
         console.error("Error:", error);
