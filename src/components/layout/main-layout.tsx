@@ -12,6 +12,7 @@ interface MainLayoutProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   activeView: TabViewType;
   onViewChange: (view: TabViewType) => void;
+  horizontalPanelLabels?: [string, string];
 }
 
 const debug = NODE_ENV === "development";
@@ -20,7 +21,7 @@ chrome.windows.getCurrent({ populate: true }, (window) => {
   console.log("accurate window height", window.height, 'width', window.width);
 });
 
-export function MainLayout({ children, className, activeView, onViewChange, ...props }: MainLayoutProps) {
+export function MainLayout({ children, className, activeView, onViewChange, horizontalPanelLabels = ['Tabs', 'Chat'], ...props }: MainLayoutProps) {
   // Use the activeView and onViewChange props from App.tsx
   const handleViewChange = (view: TabViewType) => {
     onViewChange(view);
@@ -60,7 +61,7 @@ export function MainLayout({ children, className, activeView, onViewChange, ...p
         />
       </Sidebar>
       <div className="flex flex-col flex-1 min-w-0">
-        <TopBar showChat={localStorage.getItem("showChat") === "true"} />
+        <TopBar showChat={localStorage.getItem("showChat") === "true"} horizontalPanelLabels={horizontalPanelLabels} />
         <main
           className={cn("flex-1 overflow-y-auto p-6", className)}
           {...props}

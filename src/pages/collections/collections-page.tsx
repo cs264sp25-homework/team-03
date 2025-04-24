@@ -1,11 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { SelectableTabList } from '@/components/tabs/SelectableTabList';
+import { TabSearch } from '@/components/tabs/TabSearch';
 
 export function CollectionsPage() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [tabs, setTabs] = useState<chrome.tabs.Tab[]>([]);
+
+  // Get tabs from Chrome
+  React.useEffect(() => {
+    chrome.runtime.sendMessage({type: "getTabs"}, (response) => {
+      if (response?.tabs) {
+        setTabs(response.tabs);
+      }
+    });
+  }, []);
+
   return (
     <div className="flex flex-col h-full">
-      <h1 className="text-2xl font-bold p-4">Collections</h1>
-      <div className="flex-1 p-4">
-        {/* Content will be added in future steps */}
+      <TabSearch 
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
+      <div className="flex-1">
+        <SelectableTabList 
+          tabs={tabs}
+          searchQuery={searchQuery}
+        />
       </div>
     </div>
   );

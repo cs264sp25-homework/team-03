@@ -14,6 +14,7 @@ import { useCreateChat } from "@/hooks/useCreateChat";
 import MessagesPage from "@/pages/messages/messages-page";
 import { TabGroupButton } from "@/components/TabGroupButton";
 import { CollectionsPage } from "@/pages/collections/collections-page";
+import { TabGroupsPage } from "@/pages/collections/tab-groups-page";
 
 
 declare global {
@@ -138,6 +139,7 @@ function App() {
         setActiveView(view);
         setShowChat(false); // Switch to tabs view when vertical navigation changes
       }}
+      horizontalPanelLabels={activeView === 'collections' ? ['Tabs', 'Groups'] : ['Tabs', 'Chat']}
     >
       <div className="flex flex-col w-full h-full">
         {!showChat ? (
@@ -162,7 +164,9 @@ function App() {
             </div>
           </div>
         ) : userId ? (
-          chat ? (
+          activeView === 'collections' ? (
+            <TabGroupsPage />
+          ) : chat ? (
             <MessagesPage chatId={chat._id} />
           ) : (
             <ChatCreationView onCreateChat={handleCreateChat} />
