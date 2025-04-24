@@ -3,7 +3,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "./sidebar";
 import { SidebarNavItem } from "./sidebar-nav-item";
-import { Bookmark, FolderOpen, Settings, Star } from "lucide-react";
+import { Bookmark, Folder, Settings, Star } from "lucide-react";
 import { TopBar } from "./top-bar";
 import { NODE_ENV } from "@/env";
 import { TabViewType } from "@/types/tabs";
@@ -36,26 +36,26 @@ export function MainLayout({ children, className, activeView, onViewChange, ...p
     >
       <Sidebar>
         <SidebarNavItem
-          icon={<Bookmark />}
+          icon={<Bookmark className={cn("w-5 h-5", activeView === 'all' && "text-primary fill-primary")} />}
           label="All Tabs"
           isActive={activeView === 'all'}
           onClick={() => handleViewChange('all')}
         />
         <SidebarNavItem
-          icon={<Star />}
+          icon={<Star className={cn("w-5 h-5", activeView === 'favorites' && "text-yellow-400 fill-yellow-400")} />}
           label="Favorites"
           isActive={activeView === 'favorites'}
           onClick={() => handleViewChange('favorites')}
         />
         <SidebarNavItem
-          icon={<FolderOpen />}
+          icon={<Folder className={cn("w-5 h-5", activeView === 'collections' && "text-primary fill-primary")} />}
           label="Collections"
           isActive={activeView === 'collections'}
           onClick={() => handleViewChange('collections')}
         />
         <div className="flex-1" />
         <SidebarNavItem
-          icon={<Settings />}
+          icon={<Settings className="w-5 h-5" />}
           label="Settings"
         />
       </Sidebar>

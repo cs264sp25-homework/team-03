@@ -13,6 +13,7 @@ import { useQueryUserChat } from "@/hooks/use-query-user-chat";
 import { useCreateChat } from "@/hooks/useCreateChat";
 import MessagesPage from "@/pages/messages/messages-page";
 import { TabGroupButton } from "@/components/TabGroupButton";
+import { CollectionsPage } from "@/pages/collections/collections-page";
 
 
 declare global {
@@ -32,7 +33,9 @@ function App() {
   });
   const [hasCreatedChat, setHasCreatedChat] = useState(false);
 
-  const [activeView, setActiveView] = useState<'all' | 'favorites' | 'collections'>('all');
+  const [activeView, setActiveView] = useState<'all' | 'favorites' | 'collections'>(() => {
+    return (localStorage.getItem("activeView") as 'all' | 'favorites' | 'collections') || 'all';
+  });
 
   const { userId } = useUser();
 
@@ -129,22 +132,33 @@ function App() {
   }
 
   return (
-    <MainLayout activeView={activeView} onViewChange={setActiveView}>
+    <MainLayout 
+      activeView={activeView} 
+      onViewChange={(view) => {
+        setActiveView(view);
+        setShowChat(false); // Switch to tabs view when vertical navigation changes
+      }}
+    >
       <div className="flex flex-col w-full h-full">
-        
         {!showChat ? (
           <div className="flex flex-col h-full relative">
-            <TabSearch 
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-            />
+            {activeView !== 'collections' && (
+              <TabSearch 
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+              />
+            )}
             {activeView === 'all' && <TabGroupButton />}
             <div className="flex-1 overflow-y-auto">
-              <TabList 
-                tabs={filteredTabs}
-                searchQuery={searchQuery}
-                showOnlyFavorites={activeView === 'favorites'}
-              />
+              {activeView === 'collections' ? (
+                <CollectionsPage />
+              ) : (
+                <TabList 
+                  tabs={filteredTabs}
+                  searchQuery={searchQuery}
+                  showOnlyFavorites={activeView === 'favorites'}
+                />
+              )}
             </div>
           </div>
         ) : userId ? (
