@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { SelectableTabList } from '@/components/tabs/SelectableTabList';
 import { Button } from '@/components/ui/button';
 import { CreateGroupDialog } from '@/components/tabs/CreateGroupDialog';
+import { AddToGroupDialog } from '@/components/tabs/AddToGroupDialog';
 
 export function CollectionsPage() {
   const [tabs, setTabs] = useState<chrome.tabs.Tab[]>([]);
@@ -36,12 +37,20 @@ export function CollectionsPage() {
         >
           {isAllSelected ? 'Deselect All' : 'Select All'}
         </Button>
-        <CreateGroupDialog 
-          selectedTabs={selectedTabs}
-          onSuccess={() => {
-            // Optionally refresh the tabs list or perform other actions
-          }}
-        />
+        <div className="flex gap-2">
+          <AddToGroupDialog 
+            selectedTabs={selectedTabs}
+            onSuccess={() => {
+              // Optionally refresh the tabs list or perform other actions
+            }}
+          />
+          <CreateGroupDialog 
+            selectedTabs={selectedTabs}
+            onSuccess={() => {
+              // Optionally refresh the tabs list or perform other actions
+            }}
+          />
+        </div>
       </div>
       <div className="flex-1">
         <SelectableTabList 
