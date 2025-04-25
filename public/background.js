@@ -60,7 +60,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         await chrome.scripting.executeScript({
           target: { tabId: message.tabId },
           world: "MAIN",
-          files: ["lib/Readability.js", "readabilityWrapper.js", "contentExtractor.js"]
+          files: [ "readabilityWrapper.js", "contentExtractor.js"]
         });
         
         // Run extraction
