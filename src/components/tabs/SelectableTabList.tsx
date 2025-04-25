@@ -15,13 +15,21 @@ interface SelectableTabListProps {
   showOnlyFavorites?: boolean;
   onSelectionChange?: (selectedTabs: chrome.tabs.Tab[]) => void;
   selectAll?: boolean;
+  onSelectAllChange?: (isAllSelected: boolean) => void;
 }
 
 //TODO: checkbox is hella ugly, doesn't look like shadcn demo, NEED TO FIX
 
 const debug = import.meta.env.VITE_NODE_ENV === "development";
 
-export function SelectableTabList({ tabs, searchQuery, showOnlyFavorites = false, onSelectionChange, selectAll = false }: SelectableTabListProps) {
+export function SelectableTabList({ 
+  tabs, 
+  searchQuery, 
+  showOnlyFavorites = false, 
+  onSelectionChange, 
+  selectAll = false,
+  onSelectAllChange 
+}: SelectableTabListProps) {
   const [selectedTabs, setSelectedTabs] = useState<chrome.tabs.Tab[]>([]);
   const [selectedTab, setSelectedTab] = useState<chrome.tabs.Tab | null>(null);
   const [extractedText, setExtractedText] = useState("");
@@ -53,6 +61,15 @@ export function SelectableTabList({ tabs, searchQuery, showOnlyFavorites = false
     
     setSelectedTabs(newSelectedTabs);
     onSelectionChange?.(newSelectedTabs);
+
+    // Update select all state based on manual selections
+    if (onSelectAllChange) {
+      if (newSelectedTabs.length === 0) {
+        onSelectAllChange(false);
+      } else if (newSelectedTabs.length === tabs.length) {
+        onSelectAllChange(true);
+      }
+    }
   };
 
   const handleExtractText = async (tab: chrome.tabs.Tab) => {

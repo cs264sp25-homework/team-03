@@ -26,6 +26,10 @@ export function CollectionsPage() {
     setSelectedTabs(newSelectedTabs);
   };
 
+  const handleSelectAllChange = (isAllSelected: boolean) => {
+    setIsAllSelected(isAllSelected);
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 py-2">
@@ -58,6 +62,7 @@ export function CollectionsPage() {
           searchQuery=""
           selectAll={isAllSelected}
           onSelectionChange={handleSelectionChange}
+          onSelectAllChange={handleSelectAllChange}
         />
       </div>
     </div>
