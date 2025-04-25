@@ -70,7 +70,6 @@ export default defineSchema({
 
   tabs: defineTable({
     userId: v.id("users"),  // Each tab belongs to a user
-   
     url: v.string(),
     name: v.optional(v.string()), 
     content: v.optional(v.string()),

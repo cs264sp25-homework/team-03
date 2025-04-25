@@ -40,27 +40,33 @@ export const getOne = queryWithSession({
 
 
 
+
 export const create = mutationWithSession({
   args: {
     name: v.string(),
     description: v.optional(v.string()),
-    chatId: v.optional(v.id("chats"))
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx: MutationCtx & { sessionId: SessionId }, args: { name: string; description?: string }): Promise<Id<"tabGroups">> => {
     const userId = await authenticationGuard(ctx, ctx.sessionId);
     
-    // If chatId provided, verify it exists and belongs to user
-    if (args.chatId) {
-      const chat = await ctx.db.get(args.chatId);
-      if (!chat) throw new Error("Chat not found");
-      ownershipGuard(userId, chat.userId);
-    }
-    
+    // First create the tab group
     const tabGroupId = await ctx.db.insert("tabGroups", {
       userId,
       name: args.name,
       description: args.description,
-      chatId: args.chatId
+    });
+    
+    // Then create a chat for this group
+    const chatId = await ctx.runMutation(internal.chats.createForTabGroup, {
+      userId,
+      groupName: args.name,
+      groupDescription: args.description,
+      tabGroupId,
+    }) as Id<"chats">;
+    
+    // Update the tab group with the chat ID
+    await ctx.db.patch(tabGroupId, {
+      chatId
     });
     
     return tabGroupId;
