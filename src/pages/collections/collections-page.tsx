@@ -32,31 +32,33 @@ export function CollectionsPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-2">
-        <Button
-          variant={isAllSelected ? "secondary" : "default"}
-          size="sm"
-          onClick={handleSelectAll}
-          className={!isAllSelected ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}
-        >
-          {isAllSelected ? 'Deselect All' : 'Select All'}
-        </Button>
-        <div className="flex gap-2">
-          <AddToGroupDialog 
-            selectedTabs={selectedTabs}
-            onSuccess={() => {
-              // Optionally refresh the tabs list or perform other actions
-            }}
-          />
-          <CreateGroupDialog 
-            selectedTabs={selectedTabs}
-            onSuccess={() => {
-              // Optionally refresh the tabs list or perform other actions
-            }}
-          />
+      <div className="sticky top-0 z-10 bg-background border-b">
+        <div className="flex items-center justify-between px-4 py-2">
+          <Button
+            variant={isAllSelected ? "secondary" : "default"}
+            size="sm"
+            onClick={handleSelectAll}
+            className={!isAllSelected ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}
+          >
+            {isAllSelected ? 'Deselect All' : 'Select All'}
+          </Button>
+          <div className="flex gap-2">
+            <AddToGroupDialog 
+              selectedTabs={selectedTabs}
+              onSuccess={() => {
+                // Optionally refresh the tabs list or perform other actions
+              }}
+            />
+            <CreateGroupDialog 
+              selectedTabs={selectedTabs}
+              onSuccess={() => {
+                // Optionally refresh the tabs list or perform other actions
+              }}
+            />
+          </div>
         </div>
       </div>
-      <div className="flex-1">
+      <div className="flex-1 overflow-y-auto">
         <SelectableTabList 
           tabs={tabs}
           searchQuery=""
