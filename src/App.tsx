@@ -15,6 +15,7 @@ import MessagesPage from "@/pages/messages/messages-page";
 import { TabGroupButton } from "@/components/TabGroupButton";
 import { CollectionsPage } from "@/pages/collections/collections-page";
 import { TabGroupsPage } from "@/pages/collections/tab-groups-page";
+import { useWindowChat } from '@/hooks/useWindowChat';
 
 
 declare global {
@@ -54,6 +55,7 @@ function App() {
     localStorage.setItem("activeView", activeView);
   }, [activeView]);
 
+  const { windowChatId } = useWindowChat();
   const chat = useQueryUserChat();
   const { createDefaultChat } = useCreateChat();
 
@@ -137,7 +139,7 @@ function App() {
       activeView={activeView} 
       onViewChange={(view) => {
         setActiveView(view);
-        setShowChat(false); // Switch to tabs view when vertical navigation changes
+        setShowChat(false);
       }}
       horizontalPanelLabels={activeView === 'collections' ? ['Tabs', 'Groups'] : ['Tabs', 'Chat']}
     >
@@ -166,6 +168,8 @@ function App() {
         ) : userId ? (
           activeView === 'collections' ? (
             <TabGroupsPage />
+          ) : windowChatId ? (
+            <MessagesPage chatId={windowChatId} />
           ) : chat ? (
             <MessagesPage chatId={chat._id} />
           ) : (

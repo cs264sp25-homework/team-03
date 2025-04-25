@@ -18,6 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useWindowChat } from '@/hooks/useWindowChat';
 
 function GroupTabs({ groupId }: { groupId: string }) {
   const { data: tabs, loading } = useQueryTabsInGroup(groupId as Id<"tabGroups">);
@@ -73,17 +74,35 @@ function GroupTabs({ groupId }: { groupId: string }) {
 
 function OpenAllButton({ groupId }: { groupId: Id<"tabGroups"> }) {
   const { data: tabs } = useQueryTabsInGroup(groupId);
+  const { data: group } = useQueryTabGroups();
 
   const handleOpenAllTabs = async () => {
     if (!tabs || tabs.length === 0) return;
 
     try {
+      // Find the current group to get its chat ID
+      const currentGroup = group?.find(g => g._id === groupId);
+      if (!currentGroup?.chatId) {
+        toast.error("No chat associated with this group");
+        return;
+      }
+
       // Create a new window with the first tab
       const firstTab = tabs[0];
       const window = await chrome.windows.create({
         url: firstTab.url,
         focused: true
       });
+
+      if (window.id) {
+        // Get existing window chats
+        const result = await chrome.storage.local.get(['windowChats']);
+        const windowChats = result.windowChats || {};
+
+        // Set chat ID for the new window
+        windowChats[window.id] = currentGroup.chatId;
+        await chrome.storage.local.set({ windowChats });
+      }
       
       // Open remaining tabs in the new window
       if (tabs.length > 1) {
