@@ -71,6 +71,53 @@ export const getOne = queryWithSession({
 
 
 
+export const simulatedResponse = internalMutation({
+  args: {
+    messageId: v.id("messages"),
+    userMessage: v.string(),
+    tabUrls: v.optional(v.array(v.string())),
+  },
+  handler: async (ctx, args) => {
+    // Generate a simulated response based on the user's message
+    const userMessage = args.userMessage.toLowerCase();
+    let response = "I'm sorry, I don't have a specific answer for that question. Could you try asking something else?";
+    
+    // Simple pattern matching for common questions
+    if (userMessage.includes("hello") || userMessage.includes("hi")) {
+      response = "Hello! How can I help you today?";
+    } else if (userMessage.includes("how are you")) {
+      response = "I'm doing well, thank you for asking! How can I assist you?";
+    } else if (userMessage.includes("help") || userMessage.includes("can you")) {
+      response = "I'd be happy to help! I can answer questions about your tabs, provide information, or assist with various tasks. What would you like to know?";
+    } else if (userMessage.includes("tab") || userMessage.includes("tabs")) {
+      const tabCount = args.tabUrls ? args.tabUrls.length : "several";
+      response = `I can see you have ${tabCount} tabs open. I can help you organize them or find specific information in them. What would you like to do with your tabs?`;
+    } else if (userMessage.includes("collection") || userMessage.includes("collections")) {
+      response = "Collections are a great way to organize related tabs. You can create collections, add tabs to them, and easily access them later. Would you like to know more about how to use collections?";
+    } else if (userMessage.includes("search") || userMessage.includes("find")) {
+      response = "I can help you search for information across your tabs. What specific information are you looking for?";
+    } else {
+      // Generate a more generic response for other queries
+      const responses = [
+        "I understand you're asking about that. Let me help you with this question.",
+        "That's an interesting question! Here's what I can tell you about it.",
+        "I'd be happy to help with that. Here's some information that might be useful.",
+        "Great question! Let me provide some insights on this topic.",
+        "I can certainly help with that. Here's what you should know.",
+      ];
+      response = responses[Math.floor(Math.random() * responses.length)];
+      response += "\n\nIn a real implementation, I would connect to the OpenAI API to generate a more specific and helpful response based on your question and the context of your tabs. For now, this is a simulated response for development purposes.";
+    }
+    
+    // Update the message with our simulated response
+    await ctx.db.patch(args.messageId, {
+      content: response,
+    });
+    
+    return response;
+  },
+});
+
 export const create = mutation({
   args: {
     chatId: v.id("chats"),
@@ -132,6 +179,8 @@ export const create = mutation({
       placeholderMessageId,
     });
 
+    // Always try to use the OpenAI API first since the API key is provided in Convex Environment Variables
+    console.log("Using OpenAI API with the provided API key");
     ctx.scheduler.runAfter(0, internal.openai.completion, {
       sessionId: args.sessionId,
       chatId: args.chatId,

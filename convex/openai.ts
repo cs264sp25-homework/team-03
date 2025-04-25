@@ -154,8 +154,20 @@ export const completion = internalAction({
     //console.log("Filtered tabs:", filteredTabs.map(tab => ({ url: tab.url, id: tab._id })));
     
     
+    // Verify that the OpenAI API key is available
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      console.error("OpenAI API key is not set in environment variables");
+      await ctx.runMutation(internal.messages.update, {
+        messageId: args.placeholderMessageId,
+        content: "I'm unable to connect to the AI service due to missing API credentials. Please contact the administrator to set up the OpenAI API key in the Convex Environment Variables.",
+      });
+      return;
+    }
+    
+    console.log("OpenAI API key is available, creating client");
     const openai = createOpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+      apiKey: apiKey,
       compatibility: "strict", 
     });
 
@@ -222,12 +234,29 @@ export const completion = internalAction({
       },
     });
 
-    let fullResponse = "";
-    for await (const delta of textStream) {
-      fullResponse += delta;
+    try {
+      let fullResponse = "";
+      for await (const delta of textStream) {
+        fullResponse += delta;
+        await ctx.runMutation(internal.messages.update, {
+          messageId: args.placeholderMessageId,
+          content: fullResponse || "I'm thinking...",
+        });
+      }
+      
+      // If we get here with an empty response, provide a fallback
+      if (!fullResponse.trim()) {
+        await ctx.runMutation(internal.messages.update, {
+          messageId: args.placeholderMessageId,
+          content: "I apologize, but I couldn't generate a proper response. Could you please rephrase your question?",
+        });
+      }
+    } catch (error) {
+      console.error("Error in OpenAI completion:", error);
+      // Provide a fallback response if the API call fails
       await ctx.runMutation(internal.messages.update, {
         messageId: args.placeholderMessageId,
-        content: fullResponse,
+        content: "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.",
       });
     }
   },

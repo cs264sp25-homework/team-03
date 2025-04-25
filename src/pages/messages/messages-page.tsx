@@ -19,6 +19,7 @@ const MessagesPage: React.FC<MessagesProps> = ({ chatId, onBackToCollections }) 
 
   const [collectionContext, setCollectionContext] = useState<{
     collectionId: string;
+    collectionName: string;
     tabs: chrome.tabs.Tab[];
   } | null>(null);
 
@@ -70,8 +71,8 @@ const MessagesPage: React.FC<MessagesProps> = ({ chatId, onBackToCollections }) 
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
             Back to Collections
           </button>
-          <span className="text-xs text-muted-foreground">
-            Chat with context from <span className="font-medium text-foreground">{collectionContext.tabs.length} tabs</span>
+          <span className="text-sm font-medium text-foreground">
+            Chat about <span className="font-bold text-primary">{collectionContext.collectionName}</span>
           </span>
         </div>
       )}
