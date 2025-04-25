@@ -1,5 +1,9 @@
-
 let lastSelection = null;
+import { format } from "date-fns";
+
+const now = new Date();
+console.log("Check out date format w/ IMPORT!!");
+console.log(format(now, "eeee, MMMM do yyyy, h:mm:ss a"));
 
 const tabUrls = new Map();
 
@@ -60,29 +64,32 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         await chrome.scripting.executeScript({
           target: { tabId: message.tabId },
           world: "MAIN",
-          files: [ "readabilityWrapper.js", "contentExtractor.js"]
+          files: ["readabilityWrapper.js", "contentExtractor.js"],
         });
-        
+
         // Run extraction
         const results = await chrome.scripting.executeScript({
           target: { tabId: message.tabId },
           world: "MAIN",
-          func: () => window.ContentExtractor.extract({ includeUIElements: true })
+          func: () =>
+            window.ContentExtractor.extract({ includeUIElements: true }),
         });
 
         // Process results
         if (!results?.[0]?.result) throw new Error("No content extracted");
-        
-        const { title, content, excerpt, siteName, url, timestamp } = results[0].result;
+
+        const { title, content, excerpt, siteName, url, timestamp } =
+          results[0].result;
         sendResponse({
           success: true,
           text: content,
-          metadata: { title, excerpt, siteName, url, timestamp }
+          metadata: { title, excerpt, siteName, url, timestamp },
         });
       } catch (error) {
         sendResponse({
           success: false,
-          error: error instanceof Error ? error.message : "Failed to extract text"
+          error:
+            error instanceof Error ? error.message : "Failed to extract text",
         });
       }
     })();
@@ -120,6 +127,6 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
         url: tab.url,
         title: tab.title,
       });
-    }, 100); 
+    }, 100);
   }
 });
