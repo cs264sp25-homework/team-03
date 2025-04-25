@@ -16,12 +16,17 @@ interface MessageInputProps {
     title: string;
   } | null;
   onSelectionHandled?: () => void;
+  collectionContext?: {
+    collectionId: string;
+    tabs: chrome.tabs.Tab[];
+  } | null;
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({ 
   chatId, 
   selectionData,
-  onSelectionHandled 
+  onSelectionHandled,
+  collectionContext
 }) => {
   // Get draft from storage or use empty string
   const [text, setText] = useState(() => {

@@ -1,5 +1,6 @@
 
 let lastSelection = null;
+let collectionContext = null;
 
 const tabUrls = new Map();
 
@@ -48,7 +49,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({
       selection: lastSelection,
       action: lastSelection?.action,
+      collectionContext: collectionContext
     });
+    return true;
+  }
+
+  if (message.type === "setCollectionContext") {
+    console.log("Setting collection context:", message.collectionId);
+    collectionContext = {
+      collectionId: message.collectionId,
+      tabs: message.tabs
+    };
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (message.type === "getCollectionContext") {
+    console.log("Requested collection context:", collectionContext);
+    sendResponse({ collectionContext });
+    return true;
+  }
+
+  if (message.type === "clearCollectionContext") {
+    console.log("Clearing collection context");
+    collectionContext = null;
+    sendResponse({ success: true });
     lastSelection = null;
     return true;
   }

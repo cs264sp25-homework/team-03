@@ -110,6 +110,7 @@ export default defineSchema({
     tabGroupId: v.id("tabGroups"),
     // Optional: group-specific metadata
     addedAt: v.number(), // timestamp
+    tabUrl: v.optional(v.string()), // URL of the tab (for reference)
   })
   .index("by_tab_group", ["tabGroupId"])
   .index("by_tab", ["tabId"])

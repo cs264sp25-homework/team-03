@@ -5,14 +5,13 @@ import { useUser } from "@/hooks/useUser";
 //import { Button } from "@/components/ui/button";
 //import { TextPreviewModal } from "@/components/text-preview-modal";
 import { FileText, MessageSquare } from "lucide-react";
-import { TabList } from "@/components/tabs/TabList";
+import { SelectableTabList } from "@/components/tabs/SelectableTabList";
 import { TabSearch } from "@/components/tabs/TabSearch";
 import { ChatPlaceholder } from "@/components/chat/ChatPlaceholder";
 import { ChatCreationView } from "@/components/chat/ChatCreationView";
 import { useQueryUserChat } from "@/hooks/use-query-user-chat";
 import { useCreateChat } from "@/hooks/useCreateChat";
 import MessagesPage from "@/pages/messages/messages-page";
-import { TabGroupButton } from "@/components/TabGroupButton";
 import { CollectionsPage } from "@/pages/collections/collections-page";
 
 
@@ -36,6 +35,17 @@ function App() {
   const [activeView, setActiveView] = useState<'all' | 'favorites' | 'collections'>(() => {
     return (localStorage.getItem("activeView") as 'all' | 'favorites' | 'collections') || 'all';
   });
+
+  // Function to navigate to collections view
+  const navigateToCollections = useCallback(() => {
+    setActiveView('collections');
+    setShowChat(false);
+  }, []);
+
+  // Function to navigate to chat with collection context
+  const navigateToCollectionChat = useCallback((collectionId: string) => {
+    setShowChat(true);
+  }, []);
 
   const { userId } = useUser();
 
@@ -142,28 +152,39 @@ function App() {
       <div className="flex flex-col w-full h-full">
         {!showChat ? (
           <div className="flex flex-col h-full relative">
+            
             {activeView !== 'collections' && (
               <TabSearch 
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
               />
             )}
-            {activeView === 'all' && <TabGroupButton />}
             <div className="flex-1 overflow-y-auto">
               {activeView === 'collections' ? (
-                <CollectionsPage />
+                <CollectionsPage navigateToChat={navigateToCollectionChat} />
+              ) : activeView === 'all' ? (
+                <SelectableTabList
+                  tabs={filteredTabs}
+                  searchQuery={searchQuery}
+                  showOnlyFavorites={false}
+                  showSearchBar={true}
+                />
               ) : (
-                <TabList 
+                <SelectableTabList 
                   tabs={filteredTabs}
                   searchQuery={searchQuery}
                   showOnlyFavorites={activeView === 'favorites'}
+                  showSearchBar={true}
                 />
               )}
             </div>
           </div>
         ) : userId ? (
           chat ? (
-            <MessagesPage chatId={chat._id} />
+            <MessagesPage 
+              chatId={chat._id} 
+              onBackToCollections={activeView === 'collections' ? navigateToCollections : undefined}
+            />
           ) : (
             <ChatCreationView onCreateChat={handleCreateChat} />
           )
