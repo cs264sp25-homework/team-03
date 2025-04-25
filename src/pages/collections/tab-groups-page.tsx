@@ -7,9 +7,17 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Id } from "convex/_generated/dataModel";
+import { useMutationTabGroup } from '@/hooks/use-mutation-tabGroup';
+import { toast } from 'sonner';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function TabGroupsPage() {
   const { data: tabGroups, loading } = useQueryTabGroups();
@@ -39,17 +47,26 @@ export function TabGroupsPage() {
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{group.name}</span>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="hover:bg-primary/10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Handle external link click
-                      }}
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="hover:bg-primary/10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Handle external link click
+                            }}
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Open All</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4">
@@ -71,6 +88,18 @@ export function TabGroupsPage() {
 
 function GroupTabs({ groupId }: { groupId: string }) {
   const { data: tabs, loading } = useQueryTabsInGroup(groupId as Id<"tabGroups">);
+  const { removeTab } = useMutationTabGroup();
+
+  const handleRemoveTab = async (tabId: Id<"tabs">) => {
+    try {
+      const success = await removeTab(tabId, groupId as Id<"tabGroups">);
+      if (success) {
+        toast.success("Tab removed from group");
+      }
+    } catch (error) {
+      toast.error("Failed to remove tab from group");
+    }
+  };
 
   if (loading) {
     return <div className="text-sm text-muted-foreground">Loading tabs...</div>;
@@ -95,6 +124,14 @@ function GroupTabs({ groupId }: { groupId: string }) {
               {tab.url}
             </p>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => handleRemoveTab(tab._id)}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
         </div>
       ))}
     </div>
