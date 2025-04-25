@@ -8,14 +8,12 @@ export type CreateTabType = {
   url: string;
   name?: string;
   content?: string;
-  tabGroupId?: Id<"tabGroups">;
 };
 
 export type UpdateTabType = {
   url?: string;
   name?: string;
   content?: string;
-  tabGroupId?: Id<"tabGroups">;
 };
 
 export function useMutationTabs() {
@@ -30,7 +28,6 @@ export function useMutationTabs() {
         url: tab.url,
         name: tab.name,
         content: tab.content,
-        tabGroupId: tab.tabGroupId
       });
       return tabId;
     } catch (error) {
@@ -64,7 +61,7 @@ export function useMutationTabs() {
   };
 
   // Helper function to save a Chrome tab
-  const saveFromChrome = async (chromeTab: chrome.tabs.Tab, tabGroupId?: Id<"tabGroups">, content?: string): Promise<Id<"tabs"> | null> => {
+  const saveFromChrome = async (chromeTab: chrome.tabs.Tab, content?: string): Promise<Id<"tabs"> | null> => {
     if (!chromeTab.url) {
       toast("Tab URL is required");
       return null;
@@ -77,7 +74,6 @@ export function useMutationTabs() {
       // Update existing tab
       const success = await updateTab(existingTab._id, {
         name: chromeTab.title,
-        tabGroupId,
         content
       });
       return success ? existingTab._id : null;
@@ -87,18 +83,25 @@ export function useMutationTabs() {
     return await createTab({
       url: chromeTab.url,
       name: chromeTab.title,
-      tabGroupId,
       content
     });
   };
 
   // Helper function to save multiple Chrome tabs
-  const saveMultipleFromChrome = async (chromeTabs: chrome.tabs.Tab[], tabGroupId?: Id<"tabGroups">): Promise<(Id<"tabs"> | null)[]> => {
-    return await Promise.all(
+  const saveMultipleFromChrome = async (chromeTabs: chrome.tabs.Tab[]): Promise<(Id<"tabs"> | null)[]> => {
+    console.log("Saving multiple tabs:", chromeTabs.length);
+    const results = await Promise.all(
       chromeTabs
         .filter(tab => tab.url)
-        .map(tab => saveFromChrome(tab, tabGroupId))
+        .map(async tab => {
+          console.log("Saving tab:", tab.url);
+          const result = await saveFromChrome(tab);
+          console.log("Save result:", result);
+          return result;
+        })
     );
+    console.log("All save results:", results);
+    return results;
   };
 
   return {

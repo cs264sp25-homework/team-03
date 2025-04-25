@@ -1,14 +1,14 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { FileText, MessageSquare } from "lucide-react";
+import { FileText, FolderOpen, MessageSquare } from "lucide-react";
 
 interface TopBarProps extends React.HTMLAttributes<HTMLDivElement> {
-  showChat?: boolean;
-  onToggleChat?: (show: boolean) => void;
+  showChat: boolean;
+  horizontalPanelLabels?: [string, string];
 }
 
-export function TopBar({ className, showChat = false, onToggleChat, ...props }: TopBarProps) {
+export function TopBar({ className, showChat, horizontalPanelLabels = ['Tabs', 'Chat'], ...props }: TopBarProps) {
   return (
     <div
       className={cn(
@@ -32,7 +32,7 @@ export function TopBar({ className, showChat = false, onToggleChat, ...props }: 
             }}
           >
             <FileText className="w-4 h-4" />
-            <span className="font-medium">Tabs</span>
+            <span className="font-medium">{horizontalPanelLabels[0]}</span>
           </button>
           <button
             className={`px-4 py-1.5 flex items-center justify-center gap-2 rounded-full transition-all duration-200 ${
@@ -43,8 +43,12 @@ export function TopBar({ className, showChat = false, onToggleChat, ...props }: 
               window.location.reload();
             }}
           >
-            <MessageSquare className="w-4 h-4" />
-            <span className="font-medium">Chat</span>
+            {horizontalPanelLabels[1] === 'Groups' ? (
+              <FolderOpen className="w-4 h-4" />
+            ) : (
+              <MessageSquare className="w-4 h-4" />
+            )}
+            <span className="font-medium">{horizontalPanelLabels[1]}</span>
           </button>
         </div>
       </div>

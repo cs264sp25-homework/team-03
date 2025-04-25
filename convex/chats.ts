@@ -1,8 +1,9 @@
 import { v } from "convex/values";
-//import { query, mutation } from "./_generated/server";
 import { ownershipGuard } from "./guards/ownership_guards";
 import { authenticationGuard } from "./guards/auth";
 import { mutationWithSession, queryWithSession } from "./lib/sessions";
+import { internalMutation } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 
 // ctx.user and ctx.sessionId come with mutationWithSession and queryWithSession functions
 
@@ -74,12 +75,31 @@ export const create = mutationWithSession({
       description: args.description,
       tabGroupId: args.tabGroupId,
       messageCount: 0,
-      tabCount: 0,
+     
     });
     return chatId;
   },
 });
 
+// Internal function to create a chat for a tab group
+export const createForTabGroup = internalMutation({
+  args: {
+    userId: v.id("users"),
+    groupName: v.string(),
+    groupDescription: v.optional(v.string()),
+    tabGroupId: v.id("tabGroups"),
+  },
+  handler: async (ctx, args) => {
+    const chatId = await ctx.db.insert("chats", {
+      userId: args.userId,
+      title: `Chat for ${args.groupName}`,
+      description: args.groupDescription,
+      messageCount: 0,
+      tabGroupId: args.tabGroupId,
+    });
+    return chatId;
+  },
+});
 
 export const update = mutationWithSession({
   args: {

@@ -17,7 +17,6 @@ export const chatSchema = z.object({
   title: z.string(),
   description: z.optional(z.string()),
   messageCount: z.number(),
-  tabCount: z.number(), // Changed from fileCount to tabCount to match schema
 });
 
 export type CreateChatType = z.infer<typeof createChatSchema>;
