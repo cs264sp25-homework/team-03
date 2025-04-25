@@ -1,12 +1,102 @@
 import React from 'react';
+import { useQueryTabGroups, useQueryTabsInGroup } from '@/hooks/use-query-tabGroup';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
+import { ExternalLink } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Id } from "convex/_generated/dataModel";
 
 export function TabGroupsPage() {
+  const { data: tabGroups, loading } = useQueryTabGroups();
+
   return (
     <div className="flex flex-col h-full">
       <h1 className="text-2xl font-bold p-4">Tab Groups</h1>
       <div className="flex-1 p-4">
-        {/* Content will be added in future steps */}
+        {loading ? (
+          <div className="py-8 text-center text-muted-foreground">
+            Loading groups...
+          </div>
+        ) : tabGroups.length === 0 ? (
+          <div className="py-8 text-center text-muted-foreground">
+            No tab groups found
+          </div>
+        ) : (
+          <Accordion type="single" collapsible className="space-y-4">
+            {tabGroups.map((group) => (
+              <AccordionItem
+                key={group._id}
+                value={group._id}
+                className="border border-gray-200 dark:border-gray-800 rounded-lg"
+              >
+                <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{group.name}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="hover:bg-primary/10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Handle external link click
+                      }}
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  {group.description && (
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {group.description}
+                    </p>
+                  )}
+                  <GroupTabs groupId={group._id} />
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        )}
       </div>
+    </div>
+  );
+}
+
+function GroupTabs({ groupId }: { groupId: string }) {
+  const { data: tabs, loading } = useQueryTabsInGroup(groupId as Id<"tabGroups">);
+
+  if (loading) {
+    return <div className="text-sm text-muted-foreground">Loading tabs...</div>;
+  }
+
+  if (!tabs || tabs.length === 0) {
+    return <div className="text-sm text-muted-foreground">No tabs in this group</div>;
+  }
+
+  return (
+    <div className="space-y-2">
+      {tabs.map((tab) => (
+        <div
+          key={tab._id}
+          className="flex items-start gap-3 p-3 transition-all duration-200 border border-gray-200 shadow-sm dark:border-gray-800 rounded-lg bg-background hover:bg-muted/50"
+        >
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-medium truncate">
+              {tab.name}
+            </h3>
+            <p className="text-xs truncate text-muted-foreground mt-0.5">
+              {tab.url}
+            </p>
+          </div>
+        </div>
+      ))}
     </div>
   );
 } 
