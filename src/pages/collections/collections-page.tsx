@@ -5,7 +5,7 @@ import { CollectionDetails } from '@/components/collections/CollectionDetails';
 import { toast } from 'sonner';
 
 interface CollectionsPageProps {
-  navigateToChat?: (collectionId: string) => void;
+  navigateToChat?: (collectionId: string, collectionName: string) => void;
 }
 
 export function CollectionsPage({ navigateToChat }: CollectionsPageProps) {
@@ -66,14 +66,21 @@ export function CollectionsPage({ navigateToChat }: CollectionsPageProps) {
                   onDelete={handleDeleteCollection}
                   onSelect={handleSelectCollection}
                   onChat={navigateToChat ? (collection) => {
-                    // Store the collection tabs as context for the chat
+                    console.log('Collection card chat button clicked:', collection);
+                    
+                    // First call navigateToChat to set up the UI state
+                    console.log('Calling navigateToChat with:', collection.id, collection.name);
+                    navigateToChat(collection.id, collection.name);
+                    
+                    // Then store the collection tabs as context for the chat
                     chrome.runtime.sendMessage({
                       type: "setCollectionContext",
                       collectionId: collection.id,
+                      collectionName: collection.name,
                       tabs: collection.tabs
+                    }, (response) => {
+                      console.log('setCollectionContext response:', response);
                     });
-                    // Navigate to chat view
-                    navigateToChat(collection.id);
                   } : undefined}
                 />
               ))}

@@ -37,8 +37,27 @@ const MessageInput: React.FC<MessageInputProps> = ({
   const { add: createMessage } = useMutationMessages(chatId);
 
   // Handle selection data changes
+  useEffect(() => {
+    if (selectionData?.text) {
+      const selectionPrefix = `Selected text from ${selectionData.title} (${selectionData.url}):
 
+${selectionData.text}
 
+My question about this: `;
+      setText(selectionPrefix);
+      textareaRef.current?.focus();
+      
+      // Mark selection as handled
+      onSelectionHandled?.();
+    }
+  }, [selectionData, onSelectionHandled]);
+
+  // Handle collection context - just set focus without verbose context
+  useEffect(() => {
+    if (collectionContext && !text) {
+      textareaRef.current?.focus();
+    }
+  }, [collectionContext, text]);
   // Save draft to storage whenever it changes
   useEffect(() => {
     localStorage.setItem(`chat-draft-${chatId}`, text);

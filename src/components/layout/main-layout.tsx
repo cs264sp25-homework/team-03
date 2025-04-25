@@ -60,7 +60,7 @@ export function MainLayout({ children, className, activeView, onViewChange, ...p
         />
       </Sidebar>
       <div className="flex flex-col flex-1 min-w-0">
-        <TopBar showChat={localStorage.getItem("showChat") === "true"} />
+        <TopBar />
         <main
           className={cn("flex-1 overflow-y-auto p-6", className)}
           {...props}

@@ -58,6 +58,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log("Setting collection context:", message.collectionId);
     collectionContext = {
       collectionId: message.collectionId,
+      collectionName: message.collectionName,
       tabs: message.tabs
     };
     sendResponse({ success: true });
