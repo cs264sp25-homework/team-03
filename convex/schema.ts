@@ -70,7 +70,7 @@ export default defineSchema({
 
   tabs: defineTable({
     userId: v.id("users"),  // Each tab belongs to a user
-    tabGroupId: v.optional(v.id("tabGroups")), // Optional: Link to its group
+   
     url: v.string(),
     name: v.optional(v.string()), 
     content: v.optional(v.string()),
@@ -78,7 +78,6 @@ export default defineSchema({
     status: tabStatuses,
   })
   .index("by_user_id", ["userId"])
-  .index("by_group_id", ["tabGroupId"])
   .index("by_user_and_url", ["userId", "url"]),
   
   chats: defineTable({
@@ -108,9 +107,10 @@ export default defineSchema({
   tabGroupMembers: defineTable({
     tabId: v.id("tabs"),
     tabGroupId: v.id("tabGroups"),
-    // Optional: group-specific metadata
-    addedAt: v.number(), // timestamp
+    tabUrl: v.string(),
+    addedAt: v.number(),
   })
   .index("by_tab_group", ["tabGroupId"])
   .index("by_tab", ["tabId"])
+  .index("by_tab_group_and_url", ["tabGroupId", "tabUrl"]),
 });

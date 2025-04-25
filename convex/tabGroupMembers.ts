@@ -3,7 +3,6 @@ import { internalQuery, internalMutation } from "./_generated/server";
 import { Doc } from "./_generated/dataModel";
 
 
-
 //internally called by tabGroups.ts to get all tabs in a group
 export const getTabsInGroup = internalQuery({
   args: { tabGroupId: v.id("tabGroups") },
@@ -42,27 +41,32 @@ export const getGroupsForTab = internalQuery({
   }
 });
 
+
 export const addTabToGroup = internalMutation({
   args: {
     tabId: v.id("tabs"),
-    tabGroupId: v.id("tabGroups")
+    tabGroupId: v.id("tabGroups"),
+    tabUrl: v.string()
   },
   handler: async (ctx, args) => {
-    // Check if tab is already in group
+    // Check if tab with same URL is already in group
     const existing = await ctx.db
       .query("tabGroupMembers")
-      .withIndex("by_tab_group", q => q.eq("tabGroupId", args.tabGroupId))
-      .filter(q => q.eq(q.field("tabId"), args.tabId))
+      .withIndex("by_tab_group_and_url", q => 
+        q.eq("tabGroupId", args.tabGroupId)
+         .eq("tabUrl", args.tabUrl)
+      )
       .first();
 
     if (existing) {
-      throw new Error("Tab already in group");
+      throw new Error("Tab with this URL already in group");
     }
 
     // Add to junction table
     await ctx.db.insert("tabGroupMembers", {
       tabId: args.tabId,
       tabGroupId: args.tabGroupId,
+      tabUrl: args.tabUrl,
       addedAt: Date.now()
     });
   }

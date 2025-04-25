@@ -83,7 +83,7 @@ export function TabList({ tabs, searchQuery, showOnlyFavorites = false }: TabLis
       }
 
       // Save the tab with its content
-      const tabId = await saveFromChrome(tab, undefined, response.text);
+      const tabId = await saveFromChrome(tab, response.text);
       if (!tabId) {
         toast.error("Failed to save tab to database");
       } else {

@@ -6,13 +6,13 @@ import { toast } from "sonner";
 //use for tabGroup creation, deletion
 // and updating (tabGroup update, add tab, remove tab)
 
-export function useMutationTabGroup(tabGroupId: Id<"tabGroups">) {
+export function useMutationTabGroup() {
   const updateMutation = useSessionMutation(api.tabGroups.update);
   const deleteMutation = useSessionMutation(api.tabGroups.remove);
   const addTabMutation = useSessionMutation(api.tabGroups.addTabToGroup);
   const removeTabMutation = useSessionMutation(api.tabGroups.removeTabFromGroup);
 
-  const editTabGroup = async (name: string, description?: string): Promise<boolean> => {
+  const editTabGroup = async (tabGroupId: Id<"tabGroups">, name: string, description?: string): Promise<boolean> => {
     try {
       await updateMutation({
         tabGroupId,
@@ -26,7 +26,7 @@ export function useMutationTabGroup(tabGroupId: Id<"tabGroups">) {
     }
   };
 
-  const deleteTabGroup = async (): Promise<boolean> => {
+  const deleteTabGroup = async (tabGroupId: Id<"tabGroups">): Promise<boolean> => {
     try {
       await deleteMutation({
         tabGroupId
@@ -38,7 +38,7 @@ export function useMutationTabGroup(tabGroupId: Id<"tabGroups">) {
     }
   };
 
-  const addTab = async (tabId: Id<"tabs">): Promise<boolean> => {
+  const addTab = async (tabId: Id<"tabs">, tabGroupId: Id<"tabGroups">): Promise<boolean> => {
     try {
       await addTabMutation({
         tabId,
@@ -51,7 +51,7 @@ export function useMutationTabGroup(tabGroupId: Id<"tabGroups">) {
     }
   };
 
-  const removeTab = async (tabId: Id<"tabs">): Promise<boolean> => {
+  const removeTab = async (tabId: Id<"tabs">, tabGroupId: Id<"tabGroups">): Promise<boolean> => {
     try {
       await removeTabMutation({
         tabId,
@@ -72,20 +72,19 @@ export function useMutationTabGroup(tabGroupId: Id<"tabGroups">) {
   };
 }
 
-
 export function useMutationTabGroups() {
   const createMutation = useSessionMutation(api.tabGroups.create);
 
-  const createTabGroup = async (name: string, description?: string): Promise<boolean> => {
+  const createTabGroup = async (name: string, description?: string): Promise<Id<"tabGroups"> | null> => {
     try {
-      await createMutation({
+      const tabGroupId = await createMutation({
         name,
         description
       });
-      return true;
+      return tabGroupId;
     } catch (error) {
       toast((error as Error).message || "Please try again later");
-      return false;
+      return null;
     }
   };
 

@@ -117,7 +117,6 @@ export const remove = mutationWithSession({
 
 
 //All operations relating to the tabs in a group
-
 export const getTabsInGroup: ReturnType<typeof queryWithSession> = queryWithSession({
   args: { tabGroupId: v.id("tabGroups") },
   handler: async (ctx: QueryCtx & { sessionId: SessionId }, args: { tabGroupId: Id<"tabGroups"> }): Promise<Doc<"tabs">[] | null> => {
@@ -140,6 +139,7 @@ export const getTabsInGroup: ReturnType<typeof queryWithSession> = queryWithSess
   }
 });
 
+
 export const addTabToGroup = mutationWithSession({
   args: {
     tabId: v.id("tabs"),
@@ -161,7 +161,8 @@ export const addTabToGroup = mutationWithSession({
     // Add tab to group using internal function
     await ctx.runMutation(internal.tabGroupMembers.addTabToGroup, {
       tabId: args.tabId,
-      tabGroupId: args.tabGroupId
+      tabGroupId: args.tabGroupId,
+      tabUrl: tab.url
     });
   }
 });

@@ -9,7 +9,7 @@ import { ConvexError } from "convex/values";
 
 export const getAll = queryWithSession({
   args: {
-    tabGroupId: v.optional(v.id("tabGroups")), // Optional: get tabs for a specific group
+   
   },
   handler: async (ctx, args) => {
     const userId = await authenticationGuard(ctx, ctx.sessionId);
@@ -18,10 +18,7 @@ export const getAll = queryWithSession({
     let query = ctx.db.query("tabs")
       .withIndex("by_user_id", (q) => q.eq("userId", userId));
     
-    // If tabGroupId provided, filter by group
-    if (args.tabGroupId) {
-      query = query.filter((q) => q.eq(q.field("tabGroupId"), args.tabGroupId));
-    }
+  
     
     return query.collect();
   },
@@ -81,19 +78,12 @@ export const create = mutationWithSession({
     url: v.string(),
     name: v.optional(v.string()),
     content: v.optional(v.string()),
-    tabGroupId: v.optional(v.id("tabGroups")),
+
   },
   handler: async (ctx, args) => {
     const userId = await authenticationGuard(ctx, ctx.sessionId);
    
    
-    // If groupId provided, verify it exists and belongs to user
-    if (args.tabGroupId) {
-      const group = await ctx.db.get(args.tabGroupId);
-      if (!group) throw new Error("Group not found");
-      ownershipGuard(userId, group.userId);
-    }
-
     // Check if tab already exists for this user
     const existingTab = await ctx.db
       .query("tabs")
@@ -107,7 +97,7 @@ export const create = mutationWithSession({
       await ctx.db.patch(existingTab._id, {
         name: args.name,
         content: args.content,
-        tabGroupId: args.tabGroupId
+
       });
       return existingTab._id;
     }
@@ -115,7 +105,6 @@ export const create = mutationWithSession({
     // Create new tab if it doesn't exist
     const tabId = await ctx.db.insert("tabs", {
       userId,
-      tabGroupId: args.tabGroupId,
       url: args.url,
       name: args.name,
       content: args.content,
@@ -143,7 +132,6 @@ export const update = mutationWithSession({
     url: v.optional(v.string()),
     name: v.optional(v.string()),
     content: v.optional(v.string()),
-    tabGroupId: v.optional(v.id("tabGroups")),
   },
   handler: async (ctx, args) => {
     const userId = await authenticationGuard(ctx, ctx.sessionId);
@@ -154,13 +142,6 @@ export const update = mutationWithSession({
 
     // Use ownership guard
     ownershipGuard(userId, tab.userId);
-
-    // If changing group, verify new group exists and belongs to user
-    if (args.tabGroupId) {
-      const group = await ctx.db.get(args.tabGroupId);
-      if (!group) throw new Error("Group not found");
-      ownershipGuard(userId, group.userId);
-    }
 
     if (args.content) {
       console.log("Scheduling vectorization for tab in update", args.tabId);

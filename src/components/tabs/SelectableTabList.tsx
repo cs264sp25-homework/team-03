@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { TextPreviewModal } from "@/components/text-preview-modal";
 import { FileText, RefreshCw, Star } from "lucide-react";
@@ -14,38 +14,45 @@ interface SelectableTabListProps {
   searchQuery: string;
   showOnlyFavorites?: boolean;
   onSelectionChange?: (selectedTabs: chrome.tabs.Tab[]) => void;
+  selectAll?: boolean;
 }
 
 //TODO: checkbox is hella ugly, doesn't look like shadcn demo, NEED TO FIX
 
 const debug = import.meta.env.VITE_NODE_ENV === "development";
 
-export function SelectableTabList({ tabs, searchQuery, showOnlyFavorites = false, onSelectionChange }: SelectableTabListProps) {
+export function SelectableTabList({ tabs, searchQuery, showOnlyFavorites = false, onSelectionChange, selectAll = false }: SelectableTabListProps) {
   const [selectedTabs, setSelectedTabs] = useState<chrome.tabs.Tab[]>([]);
   const [selectedTab, setSelectedTab] = useState<chrome.tabs.Tab | null>(null);
   const [extractedText, setExtractedText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
-  const { saveFromChrome } = useMutationTabs();
   const { findTabByUrl, isTabExtracted } = useQueryTabs();
   const { addFavorite, removeFavorite, isFavorite, isLoading: favoritesLoading } = useFavorites();
 
-  const filteredTabs = tabs.filter(tab => {
-    // First filter by search query
-    const matchesSearch = 
-      tab.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tab.url?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    return matchesSearch;
-  });
+  // Update selections when selectAll changes
+  useEffect(() => {
+    if (selectAll) {
+      setSelectedTabs(tabs);
+      onSelectionChange?.(tabs);
+    } else {
+      // Clear all selections when deselecting all
+      setSelectedTabs([]);
+      onSelectionChange?.([]);
+    }
+  }, [selectAll, tabs]);
 
   const handleTabSelection = (tab: chrome.tabs.Tab, checked: boolean) => {
+    let newSelectedTabs;
+    
     if (checked) {
-      setSelectedTabs([...selectedTabs, tab]);
+      newSelectedTabs = [...selectedTabs, tab];
     } else {
-      setSelectedTabs(selectedTabs.filter(t => t.id !== tab.id));
+      newSelectedTabs = selectedTabs.filter(t => t.id !== tab.id);
     }
-    onSelectionChange?.(selectedTabs);
+    
+    setSelectedTabs(newSelectedTabs);
+    onSelectionChange?.(newSelectedTabs);
   };
 
   const handleExtractText = async (tab: chrome.tabs.Tab) => {
@@ -90,16 +97,6 @@ export function SelectableTabList({ tabs, searchQuery, showOnlyFavorites = false
       if (!response.text) {
         throw new Error('No text extracted');
       }
-
-      // Save the tab with its content
-      const tabId = await saveFromChrome(tab, undefined, response.text);
-      if (!tabId) {
-        toast.error("Failed to save tab to database");
-      } else {
-        const existingTab = findTabByUrl(tab.url);
-        const action = existingTab ? "re-extracted" : "extracted";
-        toast.success(`Tab ${action} successfully`);
-      }
       
       // Then update the UI
       setExtractedText(response.text);
@@ -116,6 +113,15 @@ export function SelectableTabList({ tabs, searchQuery, showOnlyFavorites = false
     }
   };
   
+  const filteredTabs = tabs.filter(tab => {
+    // First filter by search query
+    const matchesSearch = 
+      tab.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tab.url?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return matchesSearch;
+  });
+
   return (
     <div className={cn(debug && "border border-red-500")}>
       <div className="px-4 py-3">
@@ -125,7 +131,7 @@ export function SelectableTabList({ tabs, searchQuery, showOnlyFavorites = false
               key={tab.id}
               className="flex items-start gap-3 p-4 transition-all duration-200 border border-gray-200 shadow-sm dark:border-gray-800 rounded-xl bg-background hover:bg-muted/50 hover:shadow-md"
             >
-              <div className="flex items-center mt-1">
+              <div className="flex items-center space-x-2 mt-1">
                 <Checkbox
                   id={`tab-${tab.id}`}
                   checked={selectedTabs.some(t => t.id === tab.id)}
