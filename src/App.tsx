@@ -2,8 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { StartPage } from "@/pages/start-page";
 import { useUser } from "@/hooks/useUser";
-//import { Button } from "@/components/ui/button";
-//import { TextPreviewModal } from "@/components/text-preview-modal";
 import { FileText, MessageSquare } from "lucide-react";
 import { TabList } from "@/components/tabs/TabList";
 import { TabSearch } from "@/components/tabs/TabSearch";
@@ -40,40 +38,31 @@ function App() {
   });
 
   const { userId } = useUser();
-
-  useEffect(() => {
-    localStorage.setItem("hasStarted", hasStarted.toString());
-  }, [hasStarted]);
-
-  // Update localStorage when showChat changes
-  useEffect(() => {
-    localStorage.setItem("showChat", showChat.toString());
-  }, [showChat]);
-  
-  // Update localStorage when activeView changes
-  useEffect(() => {
-    localStorage.setItem("activeView", activeView);
-  }, [activeView]);
-
   const { windowChatId } = useWindowChat();
-  const chat = useQueryUserChat();
-  const { createDefaultChat } = useCreateChat();
+  const [currentWindowId, setCurrentWindowId] = useState<number | null>(null);
 
-  // Handle selection data and navigation
   useEffect(() => {
-    const handleMessage = (message: any) => {
-      console.log('App received message:', message);
-      if (message.type === "selection") {
-        console.log('App handling selection, navigating to chat');
-        setShowChat(true);
+    // Get current window ID
+    chrome.windows.getCurrent((window) => {
+      if (window.id !== undefined) {
+        setCurrentWindowId(window.id);
       }
-    };
-
-    chrome.runtime.onMessage.addListener(handleMessage);
-    return () => {
-      chrome.runtime.onMessage.removeListener(handleMessage);
-    };
+    });
   }, []);
+
+  useEffect(() => {
+    if (currentWindowId) {
+      // Get window-specific state
+      chrome.storage.local.get(['windowStates'], (result) => {
+        const windowStates = result.windowStates || {};
+        const windowState = windowStates[currentWindowId];
+        
+        if (windowState) {
+          setActiveView(windowState.activeView);
+        }
+      });
+    }
+  }, [currentWindowId]);
 
   const updateTabs = useCallback(() => {
     chrome.runtime.sendMessage({type: "getTabs"}, (response) => {
@@ -104,31 +93,7 @@ function App() {
     tab.url?.toLowerCase().includes(searchQuery.toLowerCase())
   ), [tabs, searchQuery]);
 
-  const handleCreateChat = async () => {
-    try {
-      await createDefaultChat();
-      setHasCreatedChat(true);
-    } catch (error) {
-      console.error("Failed to create chat:", error);
-    }
-  };
 
-  
-
-  // Add logging for tab changes
-  /*useEffect(() => {
-   
-    
-    const handleTabRemoved = (tabId: number, removeInfo: chrome.tabs.TabRemoveInfo) => {
-      console.log('Tab removed in App:', tabId, removeInfo);
-    };
-
-    chrome.tabs.onRemoved.addListener(handleTabRemoved);
-    return () => {
-      chrome.tabs.onRemoved.removeListener(handleTabRemoved);
-    };
-  }, []);
-*/
 
   if (!hasStarted) {
     return <StartPage onStart={() => setHasStarted(true)} />;
@@ -137,46 +102,44 @@ function App() {
   return (
     <MainLayout 
       activeView={activeView} 
-      onViewChange={(view) => {
-        setActiveView(view);
-        setShowChat(false);
-      }}
-      horizontalPanelLabels={activeView === 'collections' ? ['Tabs', 'Groups'] : ['Tabs', 'Chat']}
+      onViewChange={setActiveView}
     >
       <div className="flex flex-col w-full h-full">
-        {!showChat ? (
+        {activeView === 'all' && (
           <div className="flex flex-col h-full relative">
-            {activeView !== 'collections' && (
-              <TabSearch 
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-              />
-            )}
-            {activeView === 'all' && <TabGroupButton />}
+            <TabSearch 
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+            />
+            <TabGroupButton />
             <div className="flex-1 overflow-y-auto">
-              {activeView === 'collections' ? (
-                <CollectionsPage />
-              ) : (
-                <TabList 
-                  tabs={filteredTabs}
-                  searchQuery={searchQuery}
-                  showOnlyFavorites={activeView === 'favorites'}
-                />
-              )}
+              <TabList 
+                tabs={filteredTabs}
+                searchQuery={searchQuery}
+                showOnlyFavorites={false}
+              />
             </div>
           </div>
-        ) : userId ? (
-          activeView === 'collections' ? (
+        )}
+        {activeView === 'favorites' && (
+          <div className="flex flex-col h-full relative">
+            <TabSearch 
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+            />
+            <div className="flex-1 overflow-y-auto">
+              <TabList 
+                tabs={filteredTabs}
+                searchQuery={searchQuery}
+                showOnlyFavorites={true}
+              />
+            </div>
+          </div>
+        )}
+        {activeView === 'collections' && (
+          <div className="flex flex-col h-full">
             <TabGroupsPage />
-          ) : windowChatId ? (
-            <MessagesPage chatId={windowChatId} />
-          ) : chat ? (
-            <MessagesPage chatId={chat._id} />
-          ) : (
-            <ChatCreationView onCreateChat={handleCreateChat} />
-          )
-        ) : (
-          <ChatPlaceholder />
+          </div>
         )}
       </div>
     </MainLayout>

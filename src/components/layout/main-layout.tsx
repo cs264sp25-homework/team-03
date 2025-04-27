@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import { Sidebar } from "./sidebar";
 import { SidebarNavItem } from "./sidebar-nav-item";
 import { Bookmark, Folder, Settings, Star } from "lucide-react";
-import { TopBar } from "./top-bar";
 import { NODE_ENV } from "@/env";
 import { TabViewType } from "@/types/tabs";
 
@@ -12,7 +11,6 @@ interface MainLayoutProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   activeView: TabViewType;
   onViewChange: (view: TabViewType) => void;
-  horizontalPanelLabels?: [string, string];
 }
 
 const debug = NODE_ENV === "development";
@@ -21,7 +19,7 @@ chrome.windows.getCurrent({ populate: true }, (window) => {
   console.log("accurate window height", window.height, 'width', window.width);
 });
 
-export function MainLayout({ children, className, activeView, onViewChange, horizontalPanelLabels = ['Tabs', 'Chat'], ...props }: MainLayoutProps) {
+export function MainLayout({ children, className, activeView, onViewChange, ...props }: MainLayoutProps) {
   // Use the activeView and onViewChange props from App.tsx
   const handleViewChange = (view: TabViewType) => {
     onViewChange(view);
@@ -61,7 +59,6 @@ export function MainLayout({ children, className, activeView, onViewChange, hori
         />
       </Sidebar>
       <div className="flex flex-col flex-1 min-w-0">
-        <TopBar showChat={localStorage.getItem("showChat") === "true"} horizontalPanelLabels={horizontalPanelLabels} />
         <main
           className={cn("flex-1 overflow-y-auto p-6", className)}
           {...props}
