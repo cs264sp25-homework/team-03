@@ -113,29 +113,20 @@ export const create = mutation({
       messageCount: chat.messageCount + 2,
     });
 
-    // Schedule an action that calls ChatGPT and updates the message
-    console.log("Sending to completion with tabUrls:", args.tabUrls);
-    console.log("Full completion args:", {
-      sessionId: args.sessionId,
-      chatId: args.chatId,
-      tabUrls: args.tabUrls,
-      messages: [
-        ...messages.map((message) => ({
-          role: message.role,
-          content: message.content,
-        })),
-        {
-          role: "user",
-          content: args.content,
-        },
-      ],
-      placeholderMessageId,
-    });
+    // Get tab URLs from the associated tab group if it exists
+    let tabUrls: string[] | undefined;
+    if (chat.tabGroupId) {
+      const tabs = await ctx.runQuery(internal.tabGroupMembers.getTabsInGroup, {
+        tabGroupId: chat.tabGroupId
+      });
+      tabUrls = tabs.map(tab => tab.url);
+    }
 
+    // Schedule an action that calls ChatGPT and updates the message
     ctx.scheduler.runAfter(0, internal.openai.completion, {
       sessionId: args.sessionId,
       chatId: args.chatId,
-      tabUrls: args.tabUrls,
+      tabUrls,
       messages: [
         ...messages.map((message) => ({
           role: message.role,
@@ -148,9 +139,6 @@ export const create = mutation({
       ],
       placeholderMessageId,
     });
-
-    
-    console.log("tabUrls", args.tabUrls);
 
     return messageId;
   },
