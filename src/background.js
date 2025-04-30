@@ -1,5 +1,6 @@
 let lastSelection = null;
 import { format } from "date-fns";
+import { Readability } from "@mozilla/readability";
 
 const now = new Date();
 console.log("Check out date format w/ IMPORT!!");
@@ -64,7 +65,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         await chrome.scripting.executeScript({
           target: { tabId: message.tabId },
           world: "MAIN",
-          files: ["readabilityWrapper.js", "contentExtractor.js"],
+          files: ["contentExtractor.js"],
         });
 
         // Run extraction
