@@ -28,5 +28,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "src/content.ts", "src/background.ts", "src/ORIGcontentExtractor.js"]
+  "include": ["src"]
 }

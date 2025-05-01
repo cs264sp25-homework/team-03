@@ -16,9 +16,9 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        background: resolve(__dirname, 'src/background.ts'),
-        contentExtractor: resolve(__dirname, 'src/contentExtractor.ts'),
-        content: resolve(__dirname, 'src/content.ts'),
+        background: resolve(__dirname, 'src/extension/background.ts'),
+        contentExtractor: resolve(__dirname, 'src/extension/contentExtractor.ts'),
+        content: resolve(__dirname, 'src/extension/content.ts'),
       },
       output: {
         entryFileNames: '[name].js',
@@ -28,8 +28,6 @@ export default defineConfig({
     },
     target: 'esnext',
     sourcemap: true,
-    modulePreload: false,  // Add this
-    cssCodeSplit: false,   // Add this
   },
 });
 
