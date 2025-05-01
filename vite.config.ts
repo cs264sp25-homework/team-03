@@ -16,7 +16,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        background: resolve(__dirname, 'src/background.js'),
+        background: resolve(__dirname, 'src/background.ts'),
+        contentExtractor: resolve(__dirname, 'src/contentExtractor.ts'),
         content: resolve(__dirname, 'src/content.ts'),
       },
       output: {
@@ -27,6 +28,8 @@ export default defineConfig({
     },
     target: 'esnext',
     sourcemap: true,
+    modulePreload: false,  // Add this
+    cssCodeSplit: false,   // Add this
   },
 });
 
