@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { TextPreviewModal } from "@/components/text-preview-modal";
-import { Check, FileText, FolderPlus, RefreshCw, Star } from "lucide-react";
+import { Check, FileText, FolderPlus, RefreshCw, Star, PlusCircle, CheckSquare, Square } from "lucide-react";
 import { useMutationTabs } from "@/hooks/use-mutation-tabs";
 import { useQueryTabs } from "@/hooks/use-query-tabs";
 import { useFavorites } from "@/hooks/useFavorites";
+import { useCollections } from "@/hooks/useCollections";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 // Implement a simplified version of the collections functionality directly
 interface Collection {
   id: string;
@@ -32,7 +34,18 @@ export function SelectableTabList({ tabs, searchQuery, showOnlyFavorites = false
   const { saveFromChrome } = useMutationTabs();
   const { findTabByUrl, isTabExtracted } = useQueryTabs();
   const { addFavorite, removeFavorite, isFavorite, isLoading: favoritesLoading } = useFavorites();
+  const { getCollections, addTabsToCollection } = useCollections();
   const [collectionLoading, setCollectionLoading] = useState(false);
+  const [addToCollectionOpen, setAddToCollectionOpen] = useState(false);
+  const [addToCollectionLoading, setAddToCollectionLoading] = useState(false);
+  
+  // Get all collections
+  const [collections, setCollections] = useState<Collection[]>([]);
+  
+  useEffect(() => {
+    // Load collections when component mounts
+    setCollections(getCollections());
+  }, [getCollections]);
   
   // State for selected tabs
   const [selectedTabs, setSelectedTabs] = useState<chrome.tabs.Tab[]>([]);
@@ -128,6 +141,16 @@ export function SelectableTabList({ tabs, searchQuery, showOnlyFavorites = false
       setSelectedTabs([...selectedTabs, tab]);
     }
   };
+  
+  const selectAllTabs = () => {
+    setSelectedTabs(filteredTabs);
+    toast.success(`Selected all ${filteredTabs.length} tabs`, { duration: 2000 });
+  };
+  
+  const deselectAllTabs = () => {
+    setSelectedTabs([]);
+    toast.success("Deselected all tabs", { duration: 2000 });
+  };
 
   const handleCreateCollection = async () => {
     if (selectedTabs.length === 0 || !collectionName.trim()) return;
@@ -161,6 +184,37 @@ export function SelectableTabList({ tabs, searchQuery, showOnlyFavorites = false
     }
   };
   
+  const handleAddToCollection = async (collectionId: string) => {
+    if (selectedTabs.length === 0 || !collectionId) return;
+    
+    try {
+      setAddToCollectionLoading(true);
+      
+      // Add tabs to the selected collection
+      const success = addTabsToCollection(collectionId, selectedTabs);
+      
+      if (success) {
+        // Find the collection name for the toast message
+        const collection = collections.find((c: Collection) => c.id === collectionId);
+        const collectionName = collection ? collection.name : "Selected collection";
+        
+        toast.success(`Added ${selectedTabs.length} tabs to "${collectionName}"`);
+        setSelectedTabs([]);
+        setAddToCollectionOpen(false);
+        
+        // Refresh collections
+        setCollections(getCollections());
+      } else {
+        toast.error("Failed to add tabs to collection");
+      }
+    } catch (err) {
+      toast.error("Failed to add tabs to collection");
+      console.error("Failed to add tabs to collection:", err);
+    } finally {
+      setAddToCollectionLoading(false);
+    }
+  };
+  
   return (
     <div className={cn(debug && "border border-red-500")}>
       {/* Collection selection UI */}
@@ -171,12 +225,46 @@ export function SelectableTabList({ tabs, searchQuery, showOnlyFavorites = false
             <div className="px-4 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/20 text-primary">
-                    <span className="text-xs font-semibold">{selectedTabs.length}</span>
-                  </div>
-                  <span className="text-sm font-medium leading-tight">Tabs selected</span>
+                  <Button 
+                    size="sm" 
+                    onClick={selectedTabs.length === filteredTabs.length ? deselectAllTabs : selectAllTabs}
+                    className="flex items-center gap-1 bg-secondary hover:bg-secondary/90 h-8 px-3 rounded-xl"
+                  >
+                    <span className="text-xs">{selectedTabs.length === filteredTabs.length ? 'Deselect All' : 'Select All'}</span>
+                  </Button>
                 </div>
                 <div className="flex items-center gap-2">
+                  {/* Add to Collection button with Popover - only shown when collections exist */}
+                  {collections.length > 0 && (
+                    <Popover open={addToCollectionOpen} onOpenChange={setAddToCollectionOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          size="sm"
+                          disabled={addToCollectionLoading}
+                          className="flex items-center gap-1 bg-secondary hover:bg-secondary/90 dark:bg-blue-600 dark:hover:bg-blue-700 h-8 px-3 rounded-xl transition-colors"
+                        >
+                          <PlusCircle className="w-3 h-3 mr-1" />
+                          <span className="text-xs">Add to Collection</span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-3 bg-white border border-gray-200 shadow-lg dark:bg-gray-800 dark:border-gray-700">
+                        <div className="text-sm font-semibold mb-2 px-1 text-gray-800 dark:text-gray-100">Add to Collection</div>
+                        <div className="max-h-48 overflow-y-auto">
+                          {collections.map((collection: Collection) => (
+                            <button
+                              key={collection.id}
+                              onClick={() => handleAddToCollection(collection.id)}
+                              className="w-full text-left px-3 py-2 text-xs rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between group"
+                            >
+                              <span className="font-medium text-gray-700 dark:text-gray-200 group-hover:text-primary">{collection.name}</span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700/50 px-1.5 py-0.5 rounded-full">({collection.tabs.length})</span>
+                            </button>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                  
                   {showCollectionInput ? (
                     <div className="flex items-center gap-1 bg-background dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
                       <input

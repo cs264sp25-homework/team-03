@@ -85,10 +85,44 @@ export function useCollections() {
     }
   };
 
+  const addTabsToCollection = (collectionId: string, tabsToAdd: chrome.tabs.Tab[]): boolean => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      if (tabsToAdd.length === 0) {
+        throw new Error("No tabs selected to add");
+      }
+
+      const collections = getCollections();
+      const collectionIndex = collections.findIndex(collection => collection.id === collectionId);
+      
+      if (collectionIndex === -1) {
+        throw new Error("Collection not found");
+      }
+
+      // Filter out tabs that are already in the collection (based on URL)
+      const existingUrls = new Set(collections[collectionIndex].tabs.map(tab => tab.url));
+      const newTabs = tabsToAdd.filter(tab => !existingUrls.has(tab.url));
+
+      // Add new tabs to the collection
+      collections[collectionIndex].tabs = [...collections[collectionIndex].tabs, ...newTabs];
+      
+      saveCollections(collections);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add tabs to collection");
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     getCollections,
     createCollection,
     deleteCollection,
+    addTabsToCollection,
     isLoading,
     error,
   };
