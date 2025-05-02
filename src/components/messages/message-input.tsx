@@ -1,10 +1,9 @@
 import { useMutationMessages } from "@/hooks/use-mutation-messages";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Paperclip, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 
 const DEBUG = false;
 
@@ -30,9 +29,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
   });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { add: createMessage } = useMutationMessages(chatId);
-
-  // Handle selection data changes
-
 
   // Save draft to storage whenever it changes
   useEffect(() => {
@@ -83,10 +79,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
     }
   };
 
-  const handleFileUpload = async () => {
-    toast.error("File upload is not implemented");
-  };
-
   return (
     <form
       onSubmit={handleSubmit}
@@ -102,17 +94,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
           },
         )}
       >
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className={cn("absolute left-4 bottom-3 h-8 w-8 hover:bg-accent", {
-            "border-2 border-green-500": DEBUG,
-          })}
-          onClick={handleFileUpload}
-        >
-          <Paperclip className="h-5 w-5 text-muted-foreground" />
-        </Button>
         <Textarea
           ref={textareaRef}
           value={text}
@@ -121,7 +102,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
           placeholder="Write a message..."
           className={cn(
             "w-full overflow-y-auto",
-            "pl-14 pr-14 py-5", // Space for icons
+            "px-14 py-5", // Space for send icon
             "focus-visible:ring-0",
             "border-0 focus-visible:ring-offset-0 rounded-lg",
             "min-h-[60px]",

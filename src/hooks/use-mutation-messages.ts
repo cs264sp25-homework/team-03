@@ -1,13 +1,18 @@
 import { CreateMessageType } from "@/types/message";
 import { api } from "../../convex/_generated/api";
 import { Id } from "convex/_generated/dataModel";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { useSessionId } from "convex-helpers/react/sessions";
+import { SessionId } from "convex-helpers/server/sessions";
 
 export function useMutationMessages(chatId: string) {
   const createMutation = useMutation(api.messages.create);
   const [sessionId] = useSessionId();
+  const messages = useQuery(api.messages.getAll, { 
+    chatId: chatId as Id<"chats">,
+    sessionId: sessionId as SessionId
+  });
 
   const createMessage = async (
     message: CreateMessageType,
@@ -36,7 +41,15 @@ export function useMutationMessages(chatId: string) {
     }
   };
 
+  const getMessageBefore = (messageId: string) => {
+    if (!messages) return null;
+    const messageIndex = messages.findIndex(m => m._id === messageId);
+    if (messageIndex <= 0) return null;
+    return messages[messageIndex - 1];
+  };
+
   return {
     add: createMessage,
+    getMessageBefore,
   };
 }

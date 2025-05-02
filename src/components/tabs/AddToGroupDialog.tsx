@@ -80,7 +80,12 @@ export function AddToGroupDialog({ selectedTabs, onSuccess }: AddToGroupDialogPr
       onSuccess?.();
     } catch (error) {
       console.error("Error adding tabs to group:", error);
-      setError((error as Error).message || "Failed to add tabs to group");
+      const errorMessage = (error as Error).message;
+      if (errorMessage.includes("Tab with this URL already in group")) {
+        setError("One or more tabs are already in this group");
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setIsAdding(false);
     }

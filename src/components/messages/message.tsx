@@ -1,4 +1,5 @@
 import { useMutationMessage } from "@/hooks/use-mutation-message";
+import { useMutationMessages } from "@/hooks/use-mutation-messages";
 import { cn } from "@/lib/utils";
 import { MessageType } from "@/types/message";
 import { useEffect, useState } from "react";
@@ -27,8 +28,10 @@ const Message: React.FC<MessageProps> = ({ message }) => {
   const isAssistant = message.role === "assistant";
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
   const [messageContent, setMessageContent] = useState(message.content);
   const { edit } = useMutationMessage(message._id);
+  const { getMessageBefore } = useMutationMessages(message.chatId);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(message.content);
@@ -42,7 +45,25 @@ const Message: React.FC<MessageProps> = ({ message }) => {
   };
 
   const handleRegenerate = async () => {
-    toast.error("Regenerate message not implemented");
+    const previousMessage = getMessageBefore(message._id);
+    if (!previousMessage) {
+      toast.error("No previous message found to regenerate from");
+      return;
+    }
+
+    setIsRegenerating(true);
+    try {
+      await edit(
+        {
+          content: previousMessage.content,
+        },
+        previousMessage._id,
+      );
+    } catch (error) {
+      toast.error("Failed to regenerate response");
+    } finally {
+      setIsRegenerating(false);
+    }
   };
 
   useEffect(() => {
@@ -124,8 +145,11 @@ const Message: React.FC<MessageProps> = ({ message }) => {
                 size="icon"
                 className="h-8 w-8"
                 onClick={handleRegenerate}
+                disabled={isRegenerating}
               >
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className={cn("h-4 w-4", {
+                  "animate-spin": isRegenerating
+                })} />
               </Button>
             ) : !isEditing ? (
               <Button
