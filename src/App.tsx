@@ -9,7 +9,7 @@ import { SelectableTabList } from "@/components/tabs/SelectableTabList";
 import { Button } from "@/components/ui/button";
 import { CreateGroupDialog } from "@/components/tabs/CreateGroupDialog";
 import { AddToGroupDialog } from "@/components/tabs/AddToGroupDialog";
-import { TabGroupsPage } from "@/pages/collections/tab-groups-page";
+import { CollectionsPage } from "@/pages/collections/new-groups-page";
 
 declare global {
   interface Window {
@@ -206,7 +206,7 @@ function App() {
         )}
         {activeView === 'collections' && (
           <div className="flex flex-col h-full">
-            <TabGroupsPage />
+            <CollectionsPage />
           </div>
         )}
       </div>
