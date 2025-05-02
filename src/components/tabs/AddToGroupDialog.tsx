@@ -32,7 +32,42 @@ export function AddToGroupDialog({ selectedTabs, onSuccess }: AddToGroupDialogPr
   const [error, setError] = useState<string | null>(null);
   const { data: tabGroups, loading } = useQueryTabGroups();
   const { addTab } = useMutationTabGroup();
-  const { create: createTab } = useMutationTabs();
+  const { create: createTab, saveFromChrome } = useMutationTabs();
+
+  const extractTextFromTab = async (tab: chrome.tabs.Tab): Promise<string | null> => {
+    if (!tab.url || !tab.id) return null;
+    
+    // Check for restricted URLs
+    if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('devtools://')) {
+      console.warn(`Cannot access restricted Chrome URL: ${tab.url}`);
+      return null;
+    }
+
+    try {
+      interface ExtractTextResponse {
+        success: boolean;
+        text?: string;
+        error?: string;
+      }
+
+      const response = await new Promise<ExtractTextResponse>((resolve) => {
+        chrome.runtime.sendMessage({ 
+          type: 'extractText', 
+          tabId: tab.id 
+        }, resolve);
+      });
+      
+      if (!response?.success || !response.text) {
+        console.warn('Failed to extract text:', response?.error);
+        return null;
+      }
+
+      return response.text;
+    } catch (err) {
+      console.error('Error extracting text:', err);
+      return null;
+    }
+  };
 
   const handleAddToGroup = async () => {
     if (!selectedGroupId) {
@@ -48,15 +83,19 @@ export function AddToGroupDialog({ selectedTabs, onSuccess }: AddToGroupDialogPr
         throw new Error("No tabs selected");
       }
 
-      // Create tabs
-      const tabIds = await Promise.all(
-        selectedTabs
-          .filter(tab => tab.url)
-          .map(tab => createTab({
+      // Extract text and create tabs
+      const tabPromises = selectedTabs
+        .filter(tab => tab.url)
+        .map(async tab => {
+          const content = await extractTextFromTab(tab);
+          return createTab({
             url: tab.url!,
-            name: tab.title
-          }))
-      );
+            name: tab.title,
+            content: content || undefined
+          });
+        });
+
+      const tabIds = await Promise.all(tabPromises);
 
       if (tabIds.some(id => id === null)) {
         throw new Error("Failed to create some tabs");
@@ -143,8 +182,8 @@ export function AddToGroupDialog({ selectedTabs, onSuccess }: AddToGroupDialogPr
             <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
           )}
           <div className="flex justify-end">
-            <Button 
-              onClick={handleAddToGroup} 
+            <Button
+              onClick={handleAddToGroup}
               disabled={!selectedGroupId || isAdding}
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
             >
