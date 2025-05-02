@@ -1,14 +1,4 @@
-interface Selection {
-  type?: string;
-  text?: string;
-  url?: string;
-  title?: string;
-  action?: string;
-}
-
 console.log("[background.ts] loaded");
-
-let lastSelection: Selection | null = null;
 
 const tabUrls = new Map();
 
@@ -44,17 +34,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.tabs.query({ currentWindow: true }, (tabs) => {
       sendResponse({ tabs: tabs });
     });
-    return true;
-  }
-
-  // Return the last selection highlighted by the user
-  if (message.type === "getSelection") {
-    console.log("[background.ts] Popup requested selection data, sending:", lastSelection);
-    sendResponse({
-      selection: lastSelection,
-      action: lastSelection?.action,
-    });
-    lastSelection = null;
     return true;
   }
 
@@ -99,39 +78,5 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
     })();
     return true;
-  }
-});
-
-chrome.contextMenus.removeAll(() => {
-  chrome.contextMenus.create({
-    id: "askAboutSelection",
-    title: "Ask About Selection",
-    contexts: ["selection"],
-  });
-});
-
-chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === "askAboutSelection" && tab?.id) {
-    lastSelection = {
-      type: "selection",
-      text: info.selectionText,
-      url: tab.url,
-      title: tab.title,
-      action: "navigateToChat",
-    };
-
-    console.log("Stored selection data:", lastSelection);
-
-    chrome.action.openPopup();
-
-    setTimeout(() => {
-      console.log("Sending selection message to popup");
-      chrome.runtime.sendMessage({
-        type: "selection",
-        text: info.selectionText,
-        url: tab.url,
-        title: tab.title,
-      });
-    }, 100);
   }
 });
