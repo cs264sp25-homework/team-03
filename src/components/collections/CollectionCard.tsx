@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { useWindowChat } from '@/hooks/useWindowChat';
+import { DeleteGroupDialog } from "./DeleteGroupDialog";
 
 // Color palette for collection backgrounds
 const colorPalettes = [
@@ -34,6 +35,7 @@ interface CollectionCardProps {
 
 export function CollectionCard({ group, onDelete, onSelect, onChatClick }: CollectionCardProps) {
   const [isHovering, setIsHovering] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { data: tabs } = useQueryTabsInGroup(group._id);
   const { setChatForWindow } = useWindowChat();
   
@@ -57,73 +59,82 @@ export function CollectionCard({ group, onDelete, onSelect, onChatClick }: Colle
   };
 
   return (
-    <div 
-      className={`relative flex flex-col p-4 transition-all duration-200 border shadow-sm rounded-xl ${colorPalette.bg} ${colorPalette.border} ${colorPalette.hover} hover:shadow-md group cursor-pointer`}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
-      onClick={() => onSelect(group)}
-    >
-      <h3 className="text-sm font-semibold truncate group-hover:text-primary transition-colors mb-3 px-1">{group.name}</h3>
-      <div className="grid grid-cols-2 gap-2 mb-3 overflow-hidden rounded-xl aspect-square w-28 h-28 mx-auto bg-white/80 dark:bg-gray-900/60 p-2 shadow-inner group-hover:shadow transition-all duration-300">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <div 
-            key={index}
-            className={cn(
-              "flex items-center justify-center rounded-lg overflow-hidden transition-transform duration-300 group-hover:scale-105",
-              [
-                "bg-blue-100/70 dark:bg-blue-900/30",
-                "bg-green-100/70 dark:bg-green-900/30",
-                "bg-amber-100/70 dark:bg-amber-900/30",
-                "bg-indigo-100/70 dark:bg-indigo-900/30"
-              ][index]
-            )}
-            style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}
+    <>
+      <div 
+        className={`relative flex flex-col p-4 transition-all duration-200 border shadow-sm rounded-xl ${colorPalette.bg} ${colorPalette.border} ${colorPalette.hover} hover:shadow-md group cursor-pointer`}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+        onClick={() => onSelect(group)}
+      >
+        <h3 className="text-sm font-semibold truncate group-hover:text-primary transition-colors mb-3 px-1">{group.name}</h3>
+        <div className="grid grid-cols-2 gap-2 mb-3 overflow-hidden rounded-xl aspect-square w-28 h-28 mx-auto bg-white/80 dark:bg-gray-900/60 p-2 shadow-inner group-hover:shadow transition-all duration-300">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div 
+              key={index}
+              className={cn(
+                "flex items-center justify-center rounded-lg overflow-hidden transition-transform duration-300 group-hover:scale-105",
+                [
+                  "bg-blue-100/70 dark:bg-blue-900/30",
+                  "bg-green-100/70 dark:bg-green-900/30",
+                  "bg-amber-100/70 dark:bg-amber-900/30",
+                  "bg-indigo-100/70 dark:bg-indigo-900/30"
+                ][index]
+              )}
+              style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}
+            >
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                {index + 1}
+              </span>
+            </div>
+          ))}
+        </div>
+        
+        <div className="flex items-center justify-between px-1 mt-1">
+          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-primary/5 text-primary/90 dark:text-primary/80 rounded-full">{tabs?.length || 0} tabs</span>
+          <span className="text-xs text-muted-foreground/70">{formattedDate}</span>
+        </div>
+        
+        <div className="absolute top-3 right-3 flex gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hover:bg-primary/10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onChatClick();
+                  }}
+                >
+                  <MessageSquare className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Open Chat</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`p-1.5 rounded-full bg-background/90 hover:bg-destructive/10 transition-all duration-200 ${isHovering ? 'opacity-100 scale-100' : 'opacity-0 scale-90'} shadow-sm`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsDeleteDialogOpen(true);
+            }}
           >
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-              {index + 1}
-            </span>
-          </div>
-        ))}
+            <Trash2 className="w-4 h-4 text-destructive" />
+          </Button>
+        </div>
       </div>
-      
-      <div className="flex items-center justify-between px-1 mt-1">
-        <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-primary/5 text-primary/90 dark:text-primary/80 rounded-full">{tabs?.length || 0} tabs</span>
-        <span className="text-xs text-muted-foreground/70">{formattedDate}</span>
-      </div>
-      
-      <div className="absolute top-3 right-3 flex gap-2">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="hover:bg-primary/10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onChatClick();
-                }}
-              >
-                <MessageSquare className="w-4 h-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Open Chat</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <Button
-          variant="ghost"
-          size="icon"
-          className={`p-1.5 rounded-full bg-background/90 hover:bg-destructive/10 transition-all duration-200 ${isHovering ? 'opacity-100 scale-100' : 'opacity-0 scale-90'} shadow-sm`}
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(group._id);
-          }}
-        >
-          <Trash2 className="w-4 h-4 text-destructive" />
-        </Button>
-      </div>
-    </div>
+
+      <DeleteGroupDialog
+        group={group}
+        onDelete={onDelete}
+        isOpen={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      />
+    </>
   );
 }
