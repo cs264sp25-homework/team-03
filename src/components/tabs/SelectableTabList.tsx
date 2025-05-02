@@ -36,6 +36,7 @@ export function SelectableTabList({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
   const { findTabByUrl, isTabExtracted } = useQueryTabs();
+  const { saveFromChrome } = useMutationTabs();
   const { addFavorite, removeFavorite, isFavorite, isLoading: favoritesLoading } = useFavorites();
 
   // Update selections when selectAll changes
@@ -113,6 +114,16 @@ export function SelectableTabList({
       
       if (!response.text) {
         throw new Error('No text extracted');
+      }
+
+      // Save the tab with its content
+      const tabId = await saveFromChrome(tab, response.text);
+      if (!tabId) {
+        toast.error("Failed to save tab to database");
+      } else {
+        const existingTab = findTabByUrl(tab.url);
+        const action = existingTab ? "re-extracted" : "extracted";
+        toast.success(`Tab ${action} successfully`);
       }
       
       // Then update the UI
