@@ -30,6 +30,11 @@ function App() {
     return (localStorage.getItem("activeView") as 'all' | 'favorites' | 'collections') || 'all';
   });
 
+  // Update localStorage when activeView changes
+  useEffect(() => {
+    localStorage.setItem("activeView", activeView);
+  }, [activeView]);
+
   const { userId } = useUser();
   const { windowChatId } = useWindowChat();
   const [currentWindowId, setCurrentWindowId] = useState<number | null>(null);

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Doc, Id } from "convex/_generated/dataModel";
 import { CollectionCard } from '@/components/collections/CollectionCard';
 import { CollectionDetails } from '@/components/collections/CollectionDetails';
@@ -8,12 +8,21 @@ import { useMutationTabGroup } from '@/hooks/use-mutation-tabGroup';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import MessagesPage from '@/pages/messages/messages-page';
+import { useWindowChat } from '@/hooks/useWindowChat';
 
 export function CollectionsPage() {
   const { data: tabGroups, loading } = useQueryTabGroups();
   const { delete: deleteGroup } = useMutationTabGroup();
   const [viewingGroup, setViewingGroup] = useState<Doc<"tabGroups"> | null>(null);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const { windowChatId, setChatForWindow } = useWindowChat();
+
+  // Restore chat state when popup reopens
+  useEffect(() => {
+    if (windowChatId) {
+      setActiveChatId(windowChatId);
+    }
+  }, [windowChatId]);
 
   const handleDeleteGroup = async (id: Id<"tabGroups">) => {
     try {
@@ -33,6 +42,11 @@ export function CollectionsPage() {
     setViewingGroup(group);
   };
 
+  const handleChatClick = (chatId: Id<"chats">) => {
+    setChatForWindow(chatId);
+    setActiveChatId(chatId);
+  };
+
   if (activeChatId) {
     return (
       <div className="flex flex-col h-full">
@@ -40,7 +54,10 @@ export function CollectionsPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setActiveChatId(null)}
+            onClick={() => {
+              setChatForWindow(null);
+              setActiveChatId(null);
+            }}
             className="gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -86,7 +103,7 @@ export function CollectionsPage() {
                   onSelect={handleSelectGroup}
                   onChatClick={() => {
                     if (group.chatId) {
-                      setActiveChatId(group.chatId);
+                      handleChatClick(group.chatId);
                     } else {
                       toast.error("No chat associated with this group");
                     }

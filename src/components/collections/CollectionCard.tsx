@@ -52,7 +52,10 @@ export function CollectionCard({ group, onDelete, onSelect, onChatClick }: Colle
   const handleChat = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (group.chatId) {
+      // First set the chat for the window
       setChatForWindow(group.chatId);
+      // Then trigger the chat click handler
+      onChatClick();
     } else {
       toast.error("No chat associated with this group");
     }
