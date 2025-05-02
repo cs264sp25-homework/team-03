@@ -7,6 +7,9 @@ TabAssist is a Chrome extension that helps you manage and interact with your bro
 - **Tab Management**: View and search all your open tabs in one place
 - **Content Extraction**: Extract and analyze text from any webpage
 - **AI Chat**: Ask questions about your tab content using AI
+- **Tab Groups**: Organize tabs into collections for better management
+- **Message Editing**: Edit and regenerate AI responses in conversations
+- **Dark Mode Support**: Full dark mode support for better viewing experience
 
 ## Installation Guide
 
@@ -96,13 +99,20 @@ Once installed, here's how to use the main features of TabAssist:
 4. **Extract Content**: Click the **Extract** button on any tab to analyze its content
 5. **View Extracted Text**: The extracted text will appear in a modal window
 
+### Tab Groups
 
+1. **Create Groups**: Select tabs and click "Create Group" to organize them
+2. **Add to Groups**: Add tabs to existing groups using the "Add To" button
+3. **Manage Groups**: View, edit, and delete groups in the Collections tab
+4. **Automatic Content Extraction**: Tab content is automatically extracted when added to groups
 
 ### Using AI Chat
 
 1. Click the **Chat** tab at the top of the extension
 2. Type your question about tab content in the message input
 3. The AI will respond based on the content of your tabs
+4. **Edit Messages**: Click the edit button to modify your messages
+5. **Regenerate Responses**: Use the regenerate button to get a new AI response
 
 ## Development Workflow
 
@@ -113,6 +123,7 @@ For developers who want to modify or enhance TabAssist, follow these steps:
 1. **Frontend Changes**:
    - Edit files in the `src` directory
    - Key components are in `src/components`
+   - UI components use shadcn/ui for consistent styling
 
 2. **Backend Changes**:
    - Edit files in the `convex` directory
@@ -174,9 +185,13 @@ The database schema is defined in the `convex/schema.ts` file and includes table
 - Chats
 - Messages
 - Tab content
+- Tab Groups
 
 ### Project Structure
 - `src/` - Frontend React application
+  - `components/` - React components
+  - `hooks/` - Custom React hooks
+  - `lib/` - Utility functions
 - `convex/` - Backend Convex functions
 - `public/` - Static assets and extension manifest
 - `build/` - Production build output
@@ -185,6 +200,16 @@ The database schema is defined in the `convex/schema.ts` file and includes table
 - Follow TypeScript best practices
 - Use ESLint for code linting
 - Use Prettier for code formatting
+- Use shadcn/ui for consistent UI components
+
+## Recent Updates
+
+- Added tab group management features
+- Implemented message editing and regeneration
+- Added dark mode support
+- Improved error handling and user feedback
+- Enhanced UI components with shadcn/ui
+- Added automatic content extraction for tab groups
 
 ## Licensing
 
