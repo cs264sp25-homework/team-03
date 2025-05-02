@@ -30,7 +30,7 @@ export function DeleteGroupDialog({ group, onDelete, isOpen, onOpenChange }: Del
             All associated chats and messages will be permanently deleted.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
+        <DialogFooter className="flex justify-between gap-4">
           <Button 
             variant="outline" 
             onClick={() => onOpenChange(false)}
@@ -39,12 +39,12 @@ export function DeleteGroupDialog({ group, onDelete, isOpen, onOpenChange }: Del
             Cancel
           </Button>
           <Button 
-            variant="default" 
+            variant="destructive" 
             onClick={() => {
               onDelete(group._id);
               onOpenChange(false);
             }}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
+            className="bg-red-600 hover:bg-red-700 text-white"
           >
             <Trash2 className="w-4 h-4 mr-2" />
             Delete Collection
