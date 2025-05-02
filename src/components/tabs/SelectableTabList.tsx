@@ -116,7 +116,7 @@ export function SelectableTabList({
         throw new Error('No text extracted');
       }
 
-      // Save the tab with its content
+      // Save the tab with its content and favicon
       const tabId = await saveFromChrome(tab, response.text);
       if (!tabId) {
         toast.error("Failed to save tab to database");

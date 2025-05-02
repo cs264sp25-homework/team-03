@@ -8,12 +8,14 @@ export type CreateTabType = {
   url: string;
   name?: string;
   content?: string;
+  favIconUrl?: string; // Tab favicon URL
 };
 
 export type UpdateTabType = {
   url?: string;
   name?: string;
   content?: string;
+  favIconUrl?: string; // Tab favicon URL
 };
 
 export function useMutationTabs() {
@@ -67,6 +69,12 @@ export function useMutationTabs() {
       return null;
     }
 
+    console.log("Saving tab with favicon:", {
+      url: chromeTab.url,
+      title: chromeTab.title,
+      favIconUrl: chromeTab.favIconUrl
+    });
+
     // First check if tab exists
     const existingTab = await getOneByUrlMutation({ url: chromeTab.url });
     
@@ -74,7 +82,8 @@ export function useMutationTabs() {
       // Update existing tab
       const success = await updateTab(existingTab._id, {
         name: chromeTab.title,
-        content
+        content,
+        favIconUrl: chromeTab.favIconUrl
       });
       return success ? existingTab._id : null;
     }
@@ -83,7 +92,8 @@ export function useMutationTabs() {
     return await createTab({
       url: chromeTab.url,
       name: chromeTab.title,
-      content
+      content,
+      favIconUrl: chromeTab.favIconUrl
     });
   };
 

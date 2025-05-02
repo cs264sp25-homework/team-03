@@ -89,7 +89,8 @@ export function CreateGroupDialog({ selectedTabs, onSuccess }: CreateGroupDialog
           return createTab({
             url: tab.url!,
             name: tab.title,
-            content: content || undefined
+            content: content || undefined,
+            favIconUrl: tab.favIconUrl
           });
         });
 

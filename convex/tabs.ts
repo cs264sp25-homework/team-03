@@ -78,7 +78,7 @@ export const create = mutationWithSession({
     url: v.string(),
     name: v.optional(v.string()),
     content: v.optional(v.string()),
-
+    favIconUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await authenticationGuard(ctx, ctx.sessionId);
@@ -97,7 +97,7 @@ export const create = mutationWithSession({
       await ctx.db.patch(existingTab._id, {
         name: args.name,
         content: args.content,
-
+        favIconUrl: args.favIconUrl,
       });
       return existingTab._id;
     }
@@ -110,6 +110,7 @@ export const create = mutationWithSession({
       content: args.content,
       error: undefined,
       status: "pending",
+      favIconUrl: args.favIconUrl,
     });
 
    
@@ -132,6 +133,7 @@ export const update = mutationWithSession({
     url: v.optional(v.string()),
     name: v.optional(v.string()),
     content: v.optional(v.string()),
+    favIconUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await authenticationGuard(ctx, ctx.sessionId);

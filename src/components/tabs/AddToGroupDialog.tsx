@@ -91,7 +91,8 @@ export function AddToGroupDialog({ selectedTabs, onSuccess }: AddToGroupDialogPr
           return createTab({
             url: tab.url!,
             name: tab.title,
-            content: content || undefined
+            content: content || undefined,
+            favIconUrl: tab.favIconUrl
           });
         });
 

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { CreateGroupDialog } from "@/components/tabs/CreateGroupDialog";
 import { AddToGroupDialog } from "@/components/tabs/AddToGroupDialog";
 import { CollectionsPage } from "@/pages/collections/new-groups-page";
+import { useFavorites } from "@/hooks/useFavorites";
 
 declare global {
   interface Window {
@@ -25,6 +26,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isAllSelected, setIsAllSelected] = useState(false);
   const [selectedTabs, setSelectedTabs] = useState<chrome.tabs.Tab[]>([]);
+  const { isFavorite } = useFavorites();
 
   const [activeView, setActiveView] = useState<'all' | 'favorites' | 'collections'>(() => {
     return (localStorage.getItem("activeView") as 'all' | 'favorites' | 'collections') || 'all';
@@ -91,10 +93,25 @@ function App() {
     };
   }, [updateTabs]);
 
-  const filteredTabs = useMemo(() => tabs.filter(tab => 
-    tab.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    tab.url?.toLowerCase().includes(searchQuery.toLowerCase())
-  ), [tabs, searchQuery]);
+  // Filter tabs based on active view and search query
+  const filteredTabs = useMemo(() => {
+    let filtered = tabs;
+    
+    // Filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter(tab => 
+        tab.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tab.url?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    // Filter by favorites if in favorites view
+    if (activeView === 'favorites') {
+      filtered = filtered.filter(tab => tab.id && isFavorite(tab.id));
+    }
+    
+    return filtered;
+  }, [tabs, searchQuery, activeView, isFavorite]);
 
   const handleSelectAll = () => {
     setIsAllSelected(!isAllSelected);

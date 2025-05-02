@@ -9,7 +9,6 @@ import { Id } from "./_generated/dataModel";
 import { SessionId } from "convex-helpers/server/sessions";
 
 
-//TODO: i am using session id to get all related tabs, but down the line we will use chat id to get the tab group and then get all tabs related to that tab group
 export interface TextEmbedding {
   text: string;
   embedding: number[];

@@ -9,6 +9,7 @@ export const createTabSchema = z.object({
   tabGroupId: z.optional(z.string()), // Optional tab group ID
   error: z.optional(z.string()),
   status: tabStatusEnum,
+  favIconUrl: z.optional(z.string()), // Tab favicon URL
 });
 
 export const updateTabSchema = createTabSchema.partial();
@@ -23,6 +24,7 @@ export const tabSchema = z.object({
   content: z.optional(z.string()),
   error: z.optional(z.string()),
   status: tabStatusEnum,
+  favIconUrl: z.optional(z.string()), // Tab favicon URL
 });
 
 export type CreateTabType = z.infer<typeof createTabSchema>;
