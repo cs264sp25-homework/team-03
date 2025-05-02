@@ -40,8 +40,14 @@ const Message: React.FC<MessageProps> = ({ message }) => {
   };
 
   const handleEdit = async () => {
-    await edit({ content: messageContent });
-    setIsEditing(false);
+    try {
+      const success = await edit({ content: messageContent });
+      if (success) {
+        setIsEditing(false);
+      }
+    } catch (error) {
+      toast.error("Failed to update message");
+    }
   };
 
   const handleRegenerate = async () => {
