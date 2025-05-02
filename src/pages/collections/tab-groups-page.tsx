@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQueryTabGroups, useQueryTabsInGroup } from '@/hooks/use-query-tabGroup';
 import {
   Accordion,
@@ -7,7 +7,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Trash2 } from "lucide-react";
+import { ExternalLink, Trash2, MessageSquare, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Id, Doc } from "convex/_generated/dataModel";
 import { useMutationTabGroup } from '@/hooks/use-mutation-tabGroup';
@@ -19,6 +19,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useWindowChat } from '@/hooks/useWindowChat';
+import MessagesPage from '@/pages/messages/messages-page';
 
 function GroupTabs({ groupId }: { groupId: string }) {
   const { data: tabs, loading } = useQueryTabsInGroup(groupId as Id<"tabGroups">);
@@ -147,6 +148,28 @@ function OpenAllButton({ groupId }: { groupId: Id<"tabGroups"> }) {
 
 export function TabGroupsPage() {
   const { data: tabGroups, loading } = useQueryTabGroups();
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+
+  if (activeChatId) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex items-center gap-2 p-4 border-b">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setActiveChatId(null)}
+            className="gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Groups
+          </Button>
+        </div>
+        <div className="flex-1">
+          <MessagesPage chatId={activeChatId} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -173,7 +196,33 @@ export function TabGroupsPage() {
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{group.name}</span>
                     </div>
-                    <OpenAllButton groupId={group._id} />
+                    <div className="flex items-center gap-2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="hover:bg-primary/10"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (group.chatId) {
+                                  setActiveChatId(group.chatId);
+                                } else {
+                                  toast.error("No chat associated with this group");
+                                }
+                              }}
+                            >
+                              <MessageSquare className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Open Chat</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <OpenAllButton groupId={group._id} />
+                    </div>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4">

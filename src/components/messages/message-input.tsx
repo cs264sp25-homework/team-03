@@ -67,17 +67,9 @@ const MessageInput: React.FC<MessageInputProps> = ({
     e.preventDefault();
     if (text.trim() === "") return;
 
-    //TODO: put this in a hook with a state
-    // Get all open tabs from current window
-    const tabs = await chrome.tabs.query({ currentWindow: true });
-    const tabUrls = tabs.map(tab => tab.url).filter((url): url is string => !!url);
-    
-    console.log("Submitting message with open tabs from current window:", tabUrls);
-
     await createMessage({
       role: "user",
       content: text,
-      tabUrls
     });
     setText("");
     // Clear the draft after sending

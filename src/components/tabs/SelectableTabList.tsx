@@ -181,6 +181,48 @@ export function SelectableTabList({
                   </div>
                 </div>
               </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`flex-shrink-0 rounded-full transition-colors ${tab.id && isFavorite(tab.id) ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'hover:bg-yellow-100 dark:hover:bg-yellow-900/30'}`}
+                  onClick={async () => {
+                    if (tab.id) {
+                      if (isFavorite(tab.id)) {
+                        const success = await removeFavorite(tab.id);
+                        if (success) {
+                          toast.success("Removed from favorites");
+                        }
+                      } else {
+                        const success = await addFavorite(tab);
+                        if (success) {
+                          toast.success("Added to favorites");
+                        }
+                      }
+                    }
+                  }}
+                  disabled={favoritesLoading}
+                >
+                  <Star className={`w-4 h-4 ${tab.id && isFavorite(tab.id) ? 'fill-yellow-400 text-yellow-400' : 'hover:text-yellow-600 dark:hover:text-yellow-400'}`} />
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`flex-shrink-0 rounded-full transition-colors ${tab.url && isTabExtracted(tab.url) ? 'bg-primary/10' : 'hover:bg-primary/10'}`}
+                  onClick={() => handleExtractText(tab)}
+                  disabled={isLoading}
+                >
+                  {tab.url && isTabExtracted(tab.url) ? (
+                    <RefreshCw className="w-4 h-4 mr-1 text-primary" />
+                  ) : (
+                    <FileText className="w-4 h-4 mr-1 text-primary" />
+                  )}
+                  <span className="text-xs font-medium">
+                    {isLoading ? "Extracting..." : tab.url && isTabExtracted(tab.url) ? "Re-extract" : "Extract Text"}
+                  </span>
+                </Button>
+              </div>
             </div>
           ))}
           

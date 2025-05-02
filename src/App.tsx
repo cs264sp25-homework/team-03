@@ -3,18 +3,13 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { StartPage } from "@/pages/start-page";
 import { useUser } from "@/hooks/useUser";
 import { FileText, MessageSquare } from "lucide-react";
-import { TabList } from "@/components/tabs/TabList";
 import { TabSearch } from "@/components/tabs/TabSearch";
-import { ChatPlaceholder } from "@/components/chat/ChatPlaceholder";
-import { ChatCreationView } from "@/components/chat/ChatCreationView";
-import { useQueryUserChat } from "@/hooks/use-query-user-chat";
-import { useCreateChat } from "@/hooks/useCreateChat";
-import MessagesPage from "@/pages/messages/messages-page";
-import { TabGroupButton } from "@/components/TabGroupButton";
-import { CollectionsPage } from "@/pages/collections/collections-page";
-import { TabGroupsPage } from "@/pages/collections/tab-groups-page";
 import { useWindowChat } from '@/hooks/useWindowChat';
-
+import { SelectableTabList } from "@/components/tabs/SelectableTabList";
+import { Button } from "@/components/ui/button";
+import { CreateGroupDialog } from "@/components/tabs/CreateGroupDialog";
+import { AddToGroupDialog } from "@/components/tabs/AddToGroupDialog";
+import { CollectionsPage } from "@/pages/collections/new-groups-page";
 
 declare global {
   interface Window {
@@ -28,10 +23,8 @@ function App() {
   });
   const [tabs, setTabs] = useState<chrome.tabs.Tab[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showChat, setShowChat] = useState(() => {
-    return localStorage.getItem("showChat") === "true";
-  });
-  const [hasCreatedChat, setHasCreatedChat] = useState(false);
+  const [isAllSelected, setIsAllSelected] = useState(false);
+  const [selectedTabs, setSelectedTabs] = useState<chrome.tabs.Tab[]>([]);
 
   const [activeView, setActiveView] = useState<'all' | 'favorites' | 'collections'>(() => {
     return (localStorage.getItem("activeView") as 'all' | 'favorites' | 'collections') || 'all';
@@ -40,6 +33,11 @@ function App() {
   const { userId } = useUser();
   const { windowChatId } = useWindowChat();
   const [currentWindowId, setCurrentWindowId] = useState<number | null>(null);
+
+  // Update localStorage when hasStarted changes
+  useEffect(() => {
+    localStorage.setItem("hasStarted", hasStarted.toString());
+  }, [hasStarted]);
 
   useEffect(() => {
     // Get current window ID
@@ -93,7 +91,17 @@ function App() {
     tab.url?.toLowerCase().includes(searchQuery.toLowerCase())
   ), [tabs, searchQuery]);
 
+  const handleSelectAll = () => {
+    setIsAllSelected(!isAllSelected);
+  };
 
+  const handleSelectionChange = (newSelectedTabs: chrome.tabs.Tab[]) => {
+    setSelectedTabs(newSelectedTabs);
+  };
+
+  const handleSelectAllChange = (isAllSelected: boolean) => {
+    setIsAllSelected(isAllSelected);
+  };
 
   if (!hasStarted) {
     return <StartPage onStart={() => setHasStarted(true)} />;
@@ -107,38 +115,98 @@ function App() {
       <div className="flex flex-col w-full h-full">
         {activeView === 'all' && (
           <div className="flex flex-col h-full relative">
-            <TabSearch 
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-            />
-            <TabGroupButton />
-            <div className="flex-1 overflow-y-auto">
-              <TabList 
+            <div className="sticky top-0 z-10 bg-background">
+              <div className="flex flex-col gap-2 p-4 border-b">
+                <TabSearch 
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                />
+                <div className="flex items-center justify-between">
+                  <Button
+                    variant={isAllSelected ? "secondary" : "default"}
+                    size="sm"
+                    onClick={handleSelectAll}
+                    className={!isAllSelected ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}
+                  >
+                    {isAllSelected ? 'Deselect All' : 'Select All'}
+                  </Button>
+                  <div className="flex items-center gap-2">
+                    <AddToGroupDialog 
+                      selectedTabs={selectedTabs}
+                      onSuccess={() => {
+                        // Optionally refresh the tabs list or perform other actions
+                      }}
+                    />
+                    <CreateGroupDialog 
+                      selectedTabs={selectedTabs}
+                      onSuccess={() => {
+                        // Optionally refresh the tabs list or perform other actions
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4">
+              <SelectableTabList 
                 tabs={filteredTabs}
                 searchQuery={searchQuery}
-                showOnlyFavorites={false}
+                selectAll={isAllSelected}
+                onSelectionChange={handleSelectionChange}
+                onSelectAllChange={handleSelectAllChange}
               />
             </div>
           </div>
         )}
         {activeView === 'favorites' && (
           <div className="flex flex-col h-full relative">
-            <TabSearch 
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-            />
-            <div className="flex-1 overflow-y-auto">
-              <TabList 
+            <div className="sticky top-0 z-10 bg-background">
+              <div className="flex flex-col gap-2 p-4 border-b">
+                <TabSearch 
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                />
+                <div className="flex items-center justify-between">
+                  <Button
+                    variant={isAllSelected ? "secondary" : "default"}
+                    size="sm"
+                    onClick={handleSelectAll}
+                    className={!isAllSelected ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}
+                  >
+                    {isAllSelected ? 'Deselect All' : 'Select All'}
+                  </Button>
+                  <div className="flex items-center gap-2">
+                    <AddToGroupDialog 
+                      selectedTabs={selectedTabs}
+                      onSuccess={() => {
+                        // Optionally refresh the tabs list or perform other actions
+                      }}
+                    />
+                    <CreateGroupDialog 
+                      selectedTabs={selectedTabs}
+                      onSuccess={() => {
+                        // Optionally refresh the tabs list or perform other actions
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4">
+              <SelectableTabList 
                 tabs={filteredTabs}
                 searchQuery={searchQuery}
                 showOnlyFavorites={true}
+                selectAll={isAllSelected}
+                onSelectionChange={handleSelectionChange}
+                onSelectAllChange={handleSelectAllChange}
               />
             </div>
           </div>
         )}
         {activeView === 'collections' && (
           <div className="flex flex-col h-full">
-            <TabGroupsPage />
+            <CollectionsPage />
           </div>
         )}
       </div>
