@@ -30,6 +30,7 @@ export function useMutationTabs() {
         url: tab.url,
         name: tab.name,
         content: tab.content,
+        favIconUrl: tab.favIconUrl
       });
       return tabId;
     } catch (error) {

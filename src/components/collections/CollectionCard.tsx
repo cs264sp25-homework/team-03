@@ -1,6 +1,6 @@
 import { Doc, Id } from "convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
-import { Trash2, MessageSquare } from "lucide-react";
+import { Trash2, MessageSquare, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo } from "react";
 import { useQueryTabsInGroup } from "@/hooks/use-query-tabGroup";
@@ -71,25 +71,33 @@ export function CollectionCard({ group, onDelete, onSelect, onChatClick }: Colle
       >
         <h3 className="text-sm font-semibold truncate group-hover:text-primary transition-colors mb-3 px-1">{group.name}</h3>
         <div className="grid grid-cols-2 gap-2 mb-3 overflow-hidden rounded-xl aspect-square w-28 h-28 mx-auto bg-white/80 dark:bg-gray-900/60 p-2 shadow-inner group-hover:shadow transition-all duration-300">
-          {Array.from({ length: 4 }).map((_, index) => (
+          {tabs?.slice(0, 4).map((tab, index) => (
             <div 
-              key={index}
+              key={tab._id}
               className={cn(
                 "flex items-center justify-center rounded-lg overflow-hidden transition-transform duration-300 group-hover:scale-105",
-                [
-                  "bg-blue-100/70 dark:bg-blue-900/30",
-                  "bg-green-100/70 dark:bg-green-900/30",
-                  "bg-amber-100/70 dark:bg-amber-900/30",
-                  "bg-indigo-100/70 dark:bg-indigo-900/30"
-                ][index]
+                "bg-white/90 dark:bg-gray-800/90"
               )}
               style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}
             >
-              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                {index + 1}
-              </span>
+              {tab.favIconUrl ? (
+                <img
+                  src={tab.favIconUrl}
+                  alt=""
+                  className="w-6 h-6 rounded-sm shadow-sm"
+                />
+              ) : (
+                <div className="flex items-center justify-center w-6 h-6 rounded-sm bg-primary/10">
+                  <FileText className="w-3 h-3 text-primary" />
+                </div>
+              )}
             </div>
           ))}
+          {(!tabs || tabs.length === 0) && (
+            <div className="col-span-2 flex items-center justify-center text-muted-foreground/50 text-xs">
+              No tabs
+            </div>
+          )}
         </div>
         
         <div className="flex items-center justify-between px-1 mt-1">

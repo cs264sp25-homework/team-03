@@ -50,19 +50,21 @@ export function CollectionsPage() {
   if (activeChatId) {
     return (
       <div className="flex flex-col h-full">
-        <div className="flex items-center gap-2 p-4 border-b">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setChatForWindow(null);
-              setActiveChatId(null);
-            }}
-            className="gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Groups
-          </Button>
+        <div className="sticky top-0 z-10 bg-background border-b transition-all duration-200">
+          <div className="flex items-center gap-2 p-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setChatForWindow(null);
+                setActiveChatId(null);
+              }}
+              className="gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Groups
+            </Button>
+          </div>
         </div>
         <div className="flex-1">
           <MessagesPage chatId={activeChatId} />
