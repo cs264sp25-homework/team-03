@@ -139,7 +139,34 @@ export const remove = mutationWithSession({
     // Verify ownership
     ownershipGuard(userId, chat.userId);
     
-    // Delete the chat
+    // First delete all messages in this chat
+    const messages = await ctx.db
+      .query("messages")
+      .withIndex("by_chat_id", q => q.eq("chatId", args.chatId))
+      .collect();
+
+    await Promise.all(messages.map(message => ctx.db.delete(message._id)));
+    
+    // Then delete the chat
+    await ctx.db.delete(args.chatId);
+  },
+});
+
+// Internal function to remove a chat and its messages
+export const removeInternal = internalMutation({
+  args: {
+    chatId: v.id("chats"),
+  },
+  handler: async (ctx, args) => {
+    // First delete all messages in this chat
+    const messages = await ctx.db
+      .query("messages")
+      .withIndex("by_chat_id", q => q.eq("chatId", args.chatId))
+      .collect();
+
+    await Promise.all(messages.map(message => ctx.db.delete(message._id)));
+    
+    // Then delete the chat
     await ctx.db.delete(args.chatId);
   },
 });

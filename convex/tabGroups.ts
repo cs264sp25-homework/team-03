@@ -115,7 +115,19 @@ export const remove = mutationWithSession({
     // Verify ownership
     ownershipGuard(userId, group.userId);
     
-    // Delete the group
+    // First remove all tab group members
+    await ctx.runMutation(internal.tabGroupMembers.removeAllTabsFromGroup, {
+      tabGroupId: args.tabGroupId
+    });
+
+    // If there's an associated chat, delete it and its messages
+    if (group.chatId) {
+      await ctx.runMutation(internal.chats.removeInternal, {
+        chatId: group.chatId
+      });
+    }
+    
+    // Finally delete the group
     await ctx.db.delete(args.tabGroupId);
   }
 });
