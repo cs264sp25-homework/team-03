@@ -1,7 +1,9 @@
 import { Doc } from "convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
-import { FileText, ExternalLink } from "lucide-react";
+import { FileText, ExternalLink, Trash2 } from "lucide-react";
 import { useQueryTabsInGroup } from "@/hooks/use-query-tabGroup";
+import { useMutationTabGroup } from "@/hooks/use-mutation-tabGroup";
+import { toast } from "sonner";
 
 interface CollectionDetailsProps {
   group: Doc<"tabGroups">;
@@ -10,6 +12,7 @@ interface CollectionDetailsProps {
 
 export function CollectionDetails({ group, onBack }: CollectionDetailsProps) {
   const { data: tabs } = useQueryTabsInGroup(group._id);
+  const { removeTab } = useMutationTabGroup();
 
   const handleOpenTab = (url: string | undefined) => {
     if (url) {
@@ -23,6 +26,13 @@ export function CollectionDetails({ group, onBack }: CollectionDetailsProps) {
         chrome.tabs.create({ url: tab.url });
       }
     });
+  };
+
+  const handleDeleteTab = async (tabId: string) => {
+    const success = await removeTab(tabId as any, group._id);
+    if (success) {
+      toast.success("Tab removed from collection");
+    }
   };
 
   return (
@@ -65,10 +75,10 @@ export function CollectionDetails({ group, onBack }: CollectionDetailsProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="flex-shrink-0 rounded-full"
-                onClick={() => handleOpenTab(tab.url)}
+                className="flex-shrink-0 rounded-full hover:bg-destructive/10"
+                onClick={() => handleDeleteTab(tab._id)}
               >
-                <ExternalLink className="w-4 h-4" />
+                <Trash2 className="w-4 h-4 text-destructive" />
               </Button>
             </div>
           ))}

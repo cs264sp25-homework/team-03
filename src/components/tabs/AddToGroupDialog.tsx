@@ -29,17 +29,19 @@ export function AddToGroupDialog({ selectedTabs, onSuccess }: AddToGroupDialogPr
   const [open, setOpen] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
   const [isAdding, setIsAdding] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { data: tabGroups, loading } = useQueryTabGroups();
   const { addTab } = useMutationTabGroup();
   const { create: createTab } = useMutationTabs();
 
   const handleAddToGroup = async () => {
     if (!selectedGroupId) {
-      toast.error("Please select a group");
+      setError("Please select a group");
       return;
     }
 
     setIsAdding(true);
+    setError(null);
 
     try {
       if (selectedTabs.length === 0) {
@@ -71,10 +73,14 @@ export function AddToGroupDialog({ selectedTabs, onSuccess }: AddToGroupDialogPr
       }
 
       toast.success("Tabs added to group successfully");
-      setOpen(false);
+      await Promise.all([
+        setSelectedGroupId(""),
+        setOpen(false)
+      ]);
       onSuccess?.();
     } catch (error) {
-      toast.error((error as Error).message || "Failed to add tabs to group");
+      console.error("Error adding tabs to group:", error);
+      setError((error as Error).message || "Failed to add tabs to group");
     } finally {
       setIsAdding(false);
     }
@@ -99,7 +105,10 @@ export function AddToGroupDialog({ selectedTabs, onSuccess }: AddToGroupDialogPr
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
+          <Select value={selectedGroupId} onValueChange={(value) => {
+            setSelectedGroupId(value);
+            setError(null);
+          }}>
             <SelectTrigger className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
               <SelectValue placeholder="Select a group" />
             </SelectTrigger>
@@ -114,13 +123,20 @@ export function AddToGroupDialog({ selectedTabs, onSuccess }: AddToGroupDialogPr
                 </SelectItem>
               ) : (
                 tabGroups.map((group) => (
-                  <SelectItem key={group._id} value={group._id}>
+                  <SelectItem 
+                    key={group._id} 
+                    value={group._id}
+                    className="cursor-pointer data-[highlighted]:bg-primary/10 data-[highlighted]:text-primary data-[state=checked]:bg-primary/20 data-[state=checked]:text-primary"
+                  >
                     {group.name}
                   </SelectItem>
                 ))
               )}
             </SelectContent>
           </Select>
+          {error && (
+            <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
+          )}
           <div className="flex justify-end">
             <Button 
               onClick={handleAddToGroup} 

@@ -39,7 +39,7 @@ export function DeleteGroupDialog({ group, onDelete, isOpen, onOpenChange }: Del
             Cancel
           </Button>
           <Button 
-            variant="primary" 
+            variant="default" 
             onClick={() => {
               onDelete(group._id);
               onOpenChange(false);

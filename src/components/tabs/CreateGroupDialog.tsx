@@ -108,7 +108,7 @@ export function CreateGroupDialog({ selectedTabs, onSuccess }: CreateGroupDialog
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               placeholder="Enter group name"
-              className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+              className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 placeholder:text-gray-400 dark:placeholder:text-gray-500"
             />
           </div>
           <div>
@@ -118,7 +118,7 @@ export function CreateGroupDialog({ selectedTabs, onSuccess }: CreateGroupDialog
               value={groupDescription}
               onChange={(e) => setGroupDescription(e.target.value)}
               placeholder="Enter group description"
-              className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+              className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 placeholder:text-gray-400 dark:placeholder:text-gray-500"
             />
           </div>
           <Button 
