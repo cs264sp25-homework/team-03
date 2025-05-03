@@ -23,7 +23,7 @@ export function TabList({ tabs, searchQuery, showOnlyFavorites = false }: TabLis
   const [error, setError] = useState<string>();
   const { saveFromChrome } = useMutationTabs();
   const { findTabByUrl, isTabExtracted } = useQueryTabs();
-  const { addFavorite, removeFavorite, isFavorite, isLoading: favoritesLoading } = useFavorites();
+  const { addFavorite, removeFavorite, isFavorite, isLoading: favoritesLoading, isAuthenticated } = useFavorites();
 
   const filteredTabs = tabs.filter(tab => {
     // First filter by search query
@@ -33,7 +33,13 @@ export function TabList({ tabs, searchQuery, showOnlyFavorites = false }: TabLis
     
     // Then filter by favorites if needed
     if (showOnlyFavorites) {
-      return matchesSearch && tab.id && isFavorite(tab.id);
+      // Only apply favorites filter if authenticated
+      if (isAuthenticated) {
+        return matchesSearch && tab.id && isFavorite(tab.id);
+      } else {
+        // If not authenticated, don't show any tabs in favorites view
+        return false;
+      }
     }
     
     return matchesSearch;

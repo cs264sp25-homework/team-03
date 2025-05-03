@@ -26,7 +26,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isAllSelected, setIsAllSelected] = useState(false);
   const [selectedTabs, setSelectedTabs] = useState<chrome.tabs.Tab[]>([]);
-  const { isFavorite } = useFavorites();
+  const { isFavorite, isAuthenticated, isLoading: favoritesLoading } = useFavorites();
 
   const [activeView, setActiveView] = useState<'all' | 'favorites' | 'collections'>(() => {
     return (localStorage.getItem("activeView") as 'all' | 'favorites' | 'collections') || 'all';
@@ -107,11 +107,17 @@ function App() {
     
     // Filter by favorites if in favorites view
     if (activeView === 'favorites') {
-      filtered = filtered.filter(tab => tab.id && isFavorite(tab.id));
+      // Only filter if we have a valid user session
+      if (isAuthenticated && !favoritesLoading) {
+        filtered = filtered.filter(tab => tab.id && isFavorite(tab.id));
+      } else {
+        // Return empty array if no user session yet or still loading
+        filtered = [];
+      }
     }
     
     return filtered;
-  }, [tabs, searchQuery, activeView, isFavorite]);
+  }, [tabs, searchQuery, activeView, isFavorite, isAuthenticated, favoritesLoading]);
 
   const handleSelectAll = () => {
     setIsAllSelected(!isAllSelected);

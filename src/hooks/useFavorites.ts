@@ -1,7 +1,8 @@
 import { api } from "../../convex/_generated/api";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useSessionMutation, useSessionQuery } from "convex-helpers/react/sessions";
 import { toast } from "sonner";
+import { useUser } from "./useUser";
 
 // Define a type for our favorite tab from Convex
 export interface FavoriteTab {
@@ -17,8 +18,14 @@ export interface FavoriteTab {
  * Hook to manage favorite tabs using Convex database
  */
 export function useFavorites() {
-  // Queries
+  // Get user to ensure session is initialized
+  const { userId, isAuthenticated, isInitializing } = useUser();
+  
+  // Only query favorites if user is authenticated
   const favorites = useSessionQuery(api.favorites.getAll, {});
+  
+  // Skip the query if not authenticated
+  const isQueryEnabled = isAuthenticated;
   
   // Mutations
   const addFavoriteMutation = useSessionMutation(api.favorites.addFavorite);
@@ -63,10 +70,12 @@ export function useFavorites() {
   }, [favorites]);
   
   return {
-    favorites: favorites || [],
+    favorites: isQueryEnabled ? (favorites || []) : [],
     addFavorite,
     removeFavorite,
     isFavorite,
-    isLoading: favorites === undefined,
+    isLoading: isInitializing || (isAuthenticated && favorites === undefined),
+    isAuthenticated,
+    userId
   };
 }

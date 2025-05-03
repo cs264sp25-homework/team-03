@@ -86,6 +86,7 @@ export default defineSchema({
     title: v.string(),
     description: v.optional(v.string()),
     messageCount: v.number(),
+    tabCount: v.optional(v.number()),  // Number of tabs associated with this chat
   })
   .index("by_user_id", ["userId"])
   .index("by_group_id", ["tabGroupId"]),

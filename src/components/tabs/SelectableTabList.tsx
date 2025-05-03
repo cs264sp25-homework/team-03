@@ -37,7 +37,7 @@ export function SelectableTabList({
   const [error, setError] = useState<string>();
   const { findTabByUrl, isTabExtracted } = useQueryTabs();
   const { saveFromChrome } = useMutationTabs();
-  const { addFavorite, removeFavorite, isFavorite, isLoading: favoritesLoading } = useFavorites();
+  const { addFavorite, removeFavorite, isFavorite, isLoading: favoritesLoading, isAuthenticated } = useFavorites();
 
   // Update selections when selectAll changes
   useEffect(() => {
