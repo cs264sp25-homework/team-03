@@ -42,10 +42,14 @@ function App() {
   const navigateToCollections = useCallback(() => {
     setActiveView('collections');
     setShowChat(false);
+    setChatCollectionId(null); // Reset collection chat ID when going back to collections
+    setCollectionChatId(null); // Reset the actual chat ID as well
   }, []);
 
   // Function to navigate to chat with collection context
-  const navigateToCollectionChat = useCallback((collectionId: string) => {
+  const navigateToCollectionChat = useCallback((collectionId: string, collectionName: string) => {
+    console.log('Navigating to collection chat:', collectionId, collectionName);
+    setChatCollectionId(collectionId);
     setShowChat(true);
   }, []);
 
@@ -66,7 +70,29 @@ function App() {
   }, [activeView]);
 
   const chat = useQueryUserChat();
-  const { createDefaultChat } = useCreateChat();
+  const { createDefaultChat, createCollectionChat } = useCreateChat();
+  
+  // Effect to create or get collection-specific chat when chatCollectionId changes
+  useEffect(() => {
+    if (chatCollectionId && !collectionChatId) {
+      // Get the collection name from localStorage or use a default
+      const collections = JSON.parse(localStorage.getItem('collections') || '[]');
+      const collection = collections.find((c: any) => c.id === chatCollectionId);
+      const collectionName = collection ? collection.name : 'Collection';
+      
+      console.log('Creating or getting chat for collection:', chatCollectionId, collectionName);
+      createCollectionChat(chatCollectionId, collectionName)
+        .then((result) => {
+          if (result && result._id) {
+            console.log('Set collection chat ID:', result._id);
+            setCollectionChatId(result._id);
+          }
+        })
+        .catch(error => {
+          console.error('Failed to create collection chat:', error);
+        });
+    }
+  }, [chatCollectionId, collectionChatId, createCollectionChat]);
 
   // Handle selection data and navigation
   useEffect(() => {
@@ -149,6 +175,8 @@ function App() {
       onViewChange={(view) => {
         setActiveView(view);
         setShowChat(false); // Switch to tabs view when vertical navigation changes
+        setChatCollectionId(null); // Reset collection chat ID when changing views
+        setCollectionChatId(null); // Reset the actual chat ID as well
       }}
     >
       <div className="flex flex-col w-full h-full">
@@ -182,7 +210,13 @@ function App() {
             </div>
           </div>
         ) : userId ? (
-          chat ? (
+          // If we have a collection chat ID, use that instead of the default chat
+          collectionChatId ? (
+            <MessagesPage 
+              chatId={collectionChatId} 
+              onBackToCollections={activeView === 'collections' ? navigateToCollections : undefined}
+            />
+          ) : chat ? (
             <MessagesPage 
               chatId={chat._id} 
               onBackToCollections={activeView === 'collections' ? navigateToCollections : undefined}

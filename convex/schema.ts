@@ -76,6 +76,7 @@ export default defineSchema({
     content: v.optional(v.string()),
     error: v.optional(v.string()),
     status: tabStatuses,
+    favIconUrl: v.optional(v.string()), // Tab favicon URL
   })
   .index("by_user_id", ["userId"])
   .index("by_group_id", ["tabGroupId"])
