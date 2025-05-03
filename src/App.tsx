@@ -44,13 +44,22 @@ function App() {
     setShowChat(false);
     setChatCollectionId(null); // Reset collection chat ID when going back to collections
     setCollectionChatId(null); // Reset the actual chat ID as well
+    localStorage.removeItem('activeCollectionChatId'); // Clear the active collection chat from localStorage
   }, []);
 
   // Function to navigate to chat with collection context
   const navigateToCollectionChat = useCallback((collectionId: string, collectionName: string) => {
     console.log('Navigating to collection chat:', collectionId, collectionName);
+    
+    // Reset any existing collection chat state first
+    setCollectionChatId(null);
+    
+    // Then set the new collection ID and show the chat
     setChatCollectionId(collectionId);
     setShowChat(true);
+    
+    // Store the current active collection chat in localStorage
+    localStorage.setItem('activeCollectionChatId', collectionId);
   }, []);
 
   const { userId } = useUser();
@@ -58,10 +67,27 @@ function App() {
   useEffect(() => {
     localStorage.setItem("hasStarted", hasStarted.toString());
   }, [hasStarted]);
+  
+  // Effect to restore the active collection chat when the app loads
+  useEffect(() => {
+    if (hasStarted) {
+      const activeCollectionChatId = localStorage.getItem('activeCollectionChatId');
+      if (activeCollectionChatId) {
+        console.log('Restoring active collection chat:', activeCollectionChatId);
+        setChatCollectionId(activeCollectionChatId);
+        setShowChat(true);
+      }
+    }
+  }, [hasStarted]);
 
   // Update localStorage when showChat changes
   useEffect(() => {
     localStorage.setItem("showChat", showChat.toString());
+    
+    // If we're hiding the chat view, also clear the active collection chat
+    if (!showChat) {
+      localStorage.removeItem('activeCollectionChatId');
+    }
   }, [showChat]);
   
   // Update localStorage when activeView changes
@@ -76,16 +102,29 @@ function App() {
   useEffect(() => {
     if (chatCollectionId && !collectionChatId) {
       // Get the collection name from localStorage or use a default
-      const collections = JSON.parse(localStorage.getItem('collections') || '[]');
+      const collections = JSON.parse(localStorage.getItem('tabCollections') || '[]');
       const collection = collections.find((c: any) => c.id === chatCollectionId);
       const collectionName = collection ? collection.name : 'Collection';
       
       console.log('Creating or getting chat for collection:', chatCollectionId, collectionName);
+      
+      // First check if we already have a chat ID stored for this collection
+      const storedChatId = localStorage.getItem(`chat_for_collection_${chatCollectionId}`);
+      if (storedChatId) {
+        console.log('Found stored chat ID for collection:', storedChatId);
+        setCollectionChatId(storedChatId);
+        return;
+      }
+      
+      // If no stored chat ID, create a new chat for this collection
       createCollectionChat(chatCollectionId, collectionName)
         .then((result) => {
           if (result && result._id) {
             console.log('Set collection chat ID:', result._id);
             setCollectionChatId(result._id);
+            
+            // Store the chat ID for this collection for future reference
+            localStorage.setItem(`chat_for_collection_${chatCollectionId}`, result._id);
           }
         })
         .catch(error => {

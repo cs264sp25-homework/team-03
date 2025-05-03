@@ -34,7 +34,7 @@ export function SelectableTabList({ tabs, searchQuery, showOnlyFavorites = false
   const { saveFromChrome } = useMutationTabs();
   const { findTabByUrl, isTabExtracted } = useQueryTabs();
   const { addFavorite, removeFavorite, isFavorite, isLoading: favoritesLoading } = useFavorites();
-  const { getCollections, addTabsToCollection } = useCollections();
+  const { getCollections, addTabsToCollection, createCollection } = useCollections();
   const [collectionLoading, setCollectionLoading] = useState(false);
   const [addToCollectionOpen, setAddToCollectionOpen] = useState(false);
   const [addToCollectionLoading, setAddToCollectionLoading] = useState(false);
@@ -44,7 +44,9 @@ export function SelectableTabList({ tabs, searchQuery, showOnlyFavorites = false
   
   useEffect(() => {
     // Load collections when component mounts
-    setCollections(getCollections());
+    const collections = getCollections();
+    console.log('Loaded collections:', collections.length);
+    setCollections(collections);
   }, [getCollections]);
   
   // State for selected tabs
@@ -158,19 +160,20 @@ export function SelectableTabList({ tabs, searchQuery, showOnlyFavorites = false
     try {
       setCollectionLoading(true);
       
-      // Create a new collection
-      const newCollection: Collection = {
-        id: `collection_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-        name: collectionName.trim(),
-        tabs: selectedTabs,
-        createdAt: new Date()
-      };
+      // Use the createCollection function from useCollections hook
+      // This will properly sync with the Convex backend
+      console.log("Creating collection with tabs:", selectedTabs.length);
       
-      // Get existing collections and add the new one
-      const collectionsJson = localStorage.getItem("tabCollections");
-      const collections = collectionsJson ? JSON.parse(collectionsJson) : [];
-      collections.push(newCollection);
-      localStorage.setItem("tabCollections", JSON.stringify(collections));
+      // Create the collection using the hook function that syncs with Convex
+      const newCollection = await createCollection(
+        collectionName.trim(),
+        selectedTabs
+      );
+      
+      console.log("Collection created:", newCollection);
+      
+      // Update the local collections state
+      setCollections(getCollections());
       
       toast.success(`Collection "${collectionName}" created with ${selectedTabs.length} tabs`);
       setSelectedTabs([]);

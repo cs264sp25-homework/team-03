@@ -40,13 +40,14 @@ export function useCreateChat() {
       
       if (existingChatId) {
         console.log('Using existing chat ID:', existingChatId);
-        // Instead of returning a mock object, create a new chat with the same ID
-        // This ensures we're returning the correct type
+        // Return the existing chat ID with the proper type structure
         return { _id: existingChatId } as { _id: string } & { __tableName: "chats" };
       }
 
       // Create a new chat for this collection
       console.log('Creating new chat for collection:', collectionName);
+      
+      // Create the chat with a proper title and description based on the collection
       const chatId = await createChat({
         sessionId,
         title: `Chat: ${collectionName}`,
